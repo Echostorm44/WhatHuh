@@ -1,12 +1,14 @@
 ﻿using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
+using System.IO.Pipes;
 using System.Windows;
 using Whisper.net;
 using Whisper.net.Ggml;
 using Wpf.Ui.Controls;
-
+// Worst case use ffmpeg -- ffmpeg -i input.mp3 -ar 16000 -ac 1 -c:a pcm_s16le output.wav
 namespace WhatHuh;
 
 /// <summary>
@@ -99,71 +101,79 @@ public partial class MainWindow : UiWindow
         IProgress<string> results = resultUpdate;
         IProgress<double> progressBar = updateProgress;
 
-        var modelName = SelectedModel.FileName;
-        if(!File.Exists(modelName))
+        try
         {
-            status.Report("Downloading Model....");
-            using var modelStream = await WhisperGgmlDownloader.GetGgmlModelAsync(SelectedModel.EnumType);
-            using var fileWriter = File.OpenWrite(AppRootPath + "\\" + modelName);
-            modelStream.CopyTo(fileWriter);
-        }
-
-        var modelPath = AppRootPath + "\\" + modelName;
-        status.Report("Loading Model....");
-        using var whisperFactory = WhisperFactory.FromPath(modelPath);
-
-        status.Report("Model Loaded!");
-        var targetFiles = FilesToConvert.ToList();
-
-        foreach(var file in targetFiles)
-        {
-            status.Report("Extracting Audio From: " + file);
-
-            var currentFileName = Path.GetFileNameWithoutExtension(file);
-            var videoFilePath = Path.GetDirectoryName(file);
-            var currentAudioFilePath = videoFilePath + "\\" + currentFileName + ".wav";
-            var tempAudioFilePath = videoFilePath + "\\" + "temp.wav";
-            var subtitleFileName = videoFilePath + "\\" + currentFileName + ".srt";
-
-            using(var reader = new MediaFoundationReader(file))
+            var modelName = SelectedModel.FileName;
+            if (!File.Exists(modelName))
             {
-                using var writer = new WaveFileWriter(tempAudioFilePath, reader.WaveFormat);
+                status.Report("Downloading Model....");
+                using var modelStream = await WhisperGgmlDownloader.GetGgmlModelAsync(SelectedModel.EnumType);
+                using var fileWriter = File.OpenWrite(AppRootPath + modelName);
+                modelStream.CopyTo(fileWriter);
+            }
+
+            var modelPath = AppRootPath + modelName;
+            status.Report("Loading Model....");
+            using var whisperFactory = WhisperFactory.FromPath(modelPath);
+
+            status.Report("Model Loaded!");
+            var targetFiles = FilesToConvert.ToList();
+
+            foreach (var file in targetFiles)
+            {
+                status.Report("Extracting Audio From: " + file);
+
+                var currentFileName = Path.GetFileNameWithoutExtension(file);
+                var videoFilePath = Path.GetDirectoryName(file);
+                var currentAudioFilePath = videoFilePath + "\\" + currentFileName + ".wav";
+                var tempAudioFilePath = videoFilePath + "\\" + "temp.wav";
+                var subtitleFileName = videoFilePath + "\\" + currentFileName + ".srt";
+
+                using (var reader = new MediaFoundationReader(file))
                 {
-                    byte[] buffer = new byte[reader.WaveFormat.AverageBytesPerSecond * 4];
-                    while(true)
+                    using var writer = new WaveFileWriter(tempAudioFilePath, reader.WaveFormat);
                     {
-                        int bytesRead = await reader.ReadAsync(buffer, 0, buffer.Length);
-                        if(bytesRead == 0)
+                        byte[] buffer = new byte[reader.WaveFormat.AverageBytesPerSecond * 4];
+                        while (true)
                         {
-                            break;// eos
+                            int bytesRead = await reader.ReadAsync(buffer, 0, buffer.Length);
+                            if (bytesRead == 0)
+                            {
+                                break;// eos
+                            }
+                            await writer.WriteAsync(buffer, 0, bytesRead);
                         }
-                        await writer.WriteAsync(buffer, 0, bytesRead);
                     }
                 }
-            }
-            // Fix format to work with whisper
-            using var wavReader = new WaveFileReader(tempAudioFilePath);
-            {
-                var newFormat = new WaveFormat(16000, 8, 1);
-                using var conversionStream = new WaveFormatConversionStream(newFormat, wavReader);
+
+                using var wavStream = new MemoryStream();
+                 
+                await Task.Factory.StartNew(() =>
                 {
-                    WaveFileWriter.CreateWaveFile(currentAudioFilePath, conversionStream);
-                }
-            }
-            status.Report("Audio Extracted! Starting Subs...");
-            File.Delete(tempAudioFilePath);
+                    using (var tempAudioStream = File.OpenRead(tempAudioFilePath))
+                    {
+                        using (var tempAudioReader = new WaveFileReader(tempAudioStream))
+                        {
+                            var resampler = new WdlResamplingSampleProvider(tempAudioReader.ToSampleProvider(), 16000);
+                            WaveFileWriter.WriteWavFileToStream(wavStream, resampler.ToWaveProvider16());                            
+                        }
+                    }
+                });
 
-            status.Report("Loading Model...");
+                wavStream.Seek(0, SeekOrigin.Begin);
 
-            using(var processor = whisperFactory.CreateBuilder().WithLanguage("auto").Build())
-            {
-                using var fileStream = File.OpenRead(currentAudioFilePath);
+                status.Report("Audio Extracted! Starting Subs...");
+                File.Delete(tempAudioFilePath);
+
+                status.Report("Loading Model...");
+
+                using (var processor = whisperFactory.CreateBuilder().WithLanguage("auto").Build())
                 {
                     using TextWriter tw = new StreamWriter(subtitleFileName);
                     {
                         status.Report("Reading Subs...");
                         var sequence = 1;
-                        await foreach(var result in processor.ProcessAsync(fileStream))
+                        await foreach (var result in processor.ProcessAsync(wavStream))
                         {
                             var srtLine = $"{sequence}\n{FormatTime(result.Start)} --> {FormatTime(result.End)}\n{result.Text}\n\n";
                             tw.Write(srtLine);
@@ -172,9 +182,13 @@ public partial class MainWindow : UiWindow
                         }
                     }
                 }
+                FilesToConvert.Remove(file);
+                File.Delete(currentAudioFilePath);
             }
-            FilesToConvert.Remove(file);
-            File.Delete(currentAudioFilePath);
+        }
+        catch (Exception ex)
+        {
+            txtResults.Text = ex.ToString();
         }
 
         btnBrowseFiles.IsEnabled = true;
