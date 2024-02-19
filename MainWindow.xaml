@@ -12,11 +12,11 @@
         WindowBackdropType="Mica"
         WindowCornerPreference="Round" 
         WindowStartupLocation="CenterScreen"
-        Height="600" Width="800" WindowStyle="None" Icon="/appIcon.ico">
+        Height="600" Width="850" WindowStyle="None" Icon="/appIcon.ico">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"></ColumnDefinition>
-            <ColumnDefinition Width="*"></ColumnDefinition>
+            <ColumnDefinition MinWidth="250" Width="Auto"></ColumnDefinition>
+            <ColumnDefinition MinWidth="500" Width="*"></ColumnDefinition>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"></RowDefinition>
@@ -78,7 +78,7 @@
         <Border Grid.Row="6" Padding="10">
             <StackPanel Orientation="Vertical">
                 <Label Content="File Queue:"></Label>
-                <ListBox ItemsSource="{Binding FilesToConvert}" AllowDrop="True" Drop="ListBox_Drop" 
+                <ListBox ItemsSource="{Binding FilesToConvert}" AllowDrop="True" Drop="ListBox_Drop"                          
                      Name="lbTargetFiles" MinHeight="100" VerticalAlignment="Top"></ListBox>
             </StackPanel>
         </Border>
