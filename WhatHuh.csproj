@@ -26,7 +26,7 @@
   <ItemGroup>
     <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="Whisper.net" Version="1.5.0" />
-    <PackageReference Include="Whisper.net.Runtime" Version="1.5.0" />
+    <PackageReference Include="Whisper.net.Runtime.Cublas" Version="1.5.0" />
     <PackageReference Include="WPF-UI" Version="2.1.0" />
   </ItemGroup>
 

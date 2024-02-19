@@ -12,11 +12,11 @@
         WindowBackdropType="Mica"
         WindowCornerPreference="Round" 
         WindowStartupLocation="CenterScreen"
-        Height="600" Width="850" WindowStyle="None" Icon="/appIcon.ico">
+        Height="600" Width="950" WindowStyle="None" Icon="/appIcon.ico">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition MinWidth="250" Width="Auto"></ColumnDefinition>
-            <ColumnDefinition MinWidth="500" Width="*"></ColumnDefinition>
+            <ColumnDefinition Width="400"></ColumnDefinition>
+            <ColumnDefinition Width="*"></ColumnDefinition>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"></RowDefinition>
@@ -73,14 +73,12 @@
             <StackPanel Orientation="Vertical">
                 <Label x:Name="lblStatus"></Label>
                 <ProgressBar x:Name="pbMainProgress" Value="0" Minimum="0" Maximum="1"></ProgressBar>
+                <Label Content="File Queue:"></Label>
             </StackPanel>
         </Border>
         <Border Grid.Row="6" Padding="10">
-            <StackPanel Orientation="Vertical">
-                <Label Content="File Queue:"></Label>
-                <ListBox ItemsSource="{Binding FilesToConvert}" AllowDrop="True" Drop="ListBox_Drop"                          
-                     Name="lbTargetFiles" MinHeight="100" VerticalAlignment="Top"></ListBox>
-            </StackPanel>
+            <ListBox ItemsSource="{Binding FilesToConvert}" AllowDrop="True" Drop="ListBox_Drop"
+     Name="lbTargetFiles" MinHeight="100" VerticalAlignment="Top"></ListBox>
         </Border>
         <Border Grid.Row="2" Grid.Column="1" Grid.RowSpan="10" Padding="10">
             <TextBox x:Name="txtResults" VerticalScrollBarVisibility="Visible"></TextBox>
