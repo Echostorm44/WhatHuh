@@ -3,12 +3,12 @@ using NAudio.Wave.SampleProviders;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
-using System.IO.Pipes;
 using System.Windows;
 using Whisper.net;
 using Whisper.net.Ggml;
 using Wpf.Ui.Controls;
 // Worst case use ffmpeg -- ffmpeg -i input.mp3 -ar 16000 -ac 1 -c:a pcm_s16le output.wav
+
 namespace WhatHuh;
 
 /// <summary>
@@ -104,7 +104,7 @@ public partial class MainWindow : UiWindow
         try
         {
             var modelName = SelectedModel.FileName;
-            if (!File.Exists(modelName))
+            if(!File.Exists(AppRootPath + modelName))
             {
                 status.Report("Downloading Model....");
                 using var modelStream = await WhisperGgmlDownloader.GetGgmlModelAsync(SelectedModel.EnumType);
@@ -119,7 +119,7 @@ public partial class MainWindow : UiWindow
             status.Report("Model Loaded!");
             var targetFiles = FilesToConvert.ToList();
 
-            foreach (var file in targetFiles)
+            foreach(var file in targetFiles)
             {
                 status.Report("Extracting Audio From: " + file);
 
@@ -129,15 +129,15 @@ public partial class MainWindow : UiWindow
                 var tempAudioFilePath = videoFilePath + "\\" + "temp.wav";
                 var subtitleFileName = videoFilePath + "\\" + currentFileName + ".srt";
 
-                using (var reader = new MediaFoundationReader(file))
+                using(var reader = new MediaFoundationReader(file))
                 {
                     using var writer = new WaveFileWriter(tempAudioFilePath, reader.WaveFormat);
                     {
                         byte[] buffer = new byte[reader.WaveFormat.AverageBytesPerSecond * 4];
-                        while (true)
+                        while(true)
                         {
                             int bytesRead = await reader.ReadAsync(buffer, 0, buffer.Length);
-                            if (bytesRead == 0)
+                            if(bytesRead == 0)
                             {
                                 break;// eos
                             }
@@ -147,17 +147,13 @@ public partial class MainWindow : UiWindow
                 }
 
                 using var wavStream = new MemoryStream();
-                 
+
                 await Task.Factory.StartNew(() =>
                 {
-                    using (var tempAudioStream = File.OpenRead(tempAudioFilePath))
-                    {
-                        using (var tempAudioReader = new WaveFileReader(tempAudioStream))
-                        {
-                            var resampler = new WdlResamplingSampleProvider(tempAudioReader.ToSampleProvider(), 16000);
-                            WaveFileWriter.WriteWavFileToStream(wavStream, resampler.ToWaveProvider16());                            
-                        }
-                    }
+                    using var tempAudioStream = File.OpenRead(tempAudioFilePath);
+                    using var tempAudioReader = new WaveFileReader(tempAudioStream);
+                    var resampler = new WdlResamplingSampleProvider(tempAudioReader.ToSampleProvider(), 16000);
+                    WaveFileWriter.WriteWavFileToStream(wavStream, resampler.ToWaveProvider16());
                 });
 
                 wavStream.Seek(0, SeekOrigin.Begin);
@@ -167,13 +163,13 @@ public partial class MainWindow : UiWindow
 
                 status.Report("Loading Model...");
 
-                using (var processor = whisperFactory.CreateBuilder().WithLanguage("auto").Build())
+                using(var processor = whisperFactory.CreateBuilder().WithLanguage("auto").Build())
                 {
                     using TextWriter tw = new StreamWriter(subtitleFileName);
                     {
                         status.Report("Reading Subs...");
                         var sequence = 1;
-                        await foreach (var result in processor.ProcessAsync(wavStream))
+                        await foreach(var result in processor.ProcessAsync(wavStream))
                         {
                             var srtLine = $"{sequence}\n{FormatTime(result.Start)} --> {FormatTime(result.End)}\n{result.Text}\n\n";
                             tw.Write(srtLine);
@@ -186,7 +182,7 @@ public partial class MainWindow : UiWindow
                 File.Delete(currentAudioFilePath);
             }
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             txtResults.Text = ex.ToString();
         }
