@@ -1,13 +1,16 @@
 ﻿using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Windows;
 using Whisper.net;
 using Whisper.net.Ggml;
 using Wpf.Ui.Controls;
-// Worst case use ffmpeg -- ffmpeg -i input.mp3 -ar 16000 -ac 1 -c:a pcm_s16le output.wav
+// Worst case use ffmpeg -- ffmpeg -i The.Daily.Show.2024.03.04.Jonathan.Blitzer.1080p.AMZN.WEB-DL.DDP2.0.H.264-None.mkv output.wav
+// For Cuda support cudaart64_12.dll, cublas64_12.dll &&cublasLt64_12.dll need to either be in PATH || in 
+// same directory as the executable
 
 namespace WhatHuh;
 
@@ -129,21 +132,19 @@ public partial class MainWindow : UiWindow
                 var tempAudioFilePath = videoFilePath + "\\" + "temp.wav";
                 var subtitleFileName = videoFilePath + "\\" + currentFileName + ".srt";
 
-                using(var reader = new MediaFoundationReader(file))
+                ProcessStartInfo startInfo = new ProcessStartInfo
                 {
-                    using var writer = new WaveFileWriter(tempAudioFilePath, reader.WaveFormat);
-                    {
-                        byte[] buffer = new byte[reader.WaveFormat.AverageBytesPerSecond * 4];
-                        while(true)
-                        {
-                            int bytesRead = await reader.ReadAsync(buffer, 0, buffer.Length);
-                            if(bytesRead == 0)
-                            {
-                                break;// eos
-                            }
-                            await writer.WriteAsync(buffer, 0, bytesRead);
-                        }
-                    }
+                    FileName = "ffmpeg.exe",
+                    Arguments = $"-i \"{file}\" \"{tempAudioFilePath}\"",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using(Process process = new Process { StartInfo = startInfo })
+                {
+                    process.Start();
+                    process.WaitForExit();
                 }
 
                 using var wavStream = new MemoryStream();
@@ -163,7 +164,7 @@ public partial class MainWindow : UiWindow
 
                 status.Report("Loading Model...");
 
-                using(var processor = whisperFactory.CreateBuilder().WithLanguage("auto").Build())
+                using(var processor = whisperFactory.CreateBuilder().WithLanguage("English").Build())
                 {
                     using TextWriter tw = new StreamWriter(subtitleFileName);
                     {
