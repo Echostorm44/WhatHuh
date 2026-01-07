@@ -1,0 +1,296 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="750"
+        x:Class="WhatHuh.Gui.MainWindow"
+        Title="What? Huh? Subtitler"
+        Width="1000" Height="750"
+        MinWidth="800" MinHeight="600"
+        WindowStartupLocation="CenterScreen"
+        Background="#0D0D0D">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid Margin="32">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="16"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="16"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="16"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="16"/>
+                <RowDefinition Height="200"/>
+                <RowDefinition Height="24"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Header -->
+            <TextBlock Grid.Row="0" Grid.ColumnSpan="2" 
+                       Text="What? Huh? Subtitler" 
+                       FontSize="32" FontWeight="Light"
+                       Foreground="#FFFFFF"
+                       Margin="0,0,0,0"/>
+
+            <!-- File Selection Area -->
+            <Border Grid.Row="2" Grid.ColumnSpan="2" 
+                    Background="#1A1A1A" 
+                    CornerRadius="16" 
+                    Padding="28"
+                    BoxShadow="0 4 16 0 #11000000">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" 
+                               Text="Drop video files here or browse to select" 
+                               VerticalAlignment="Center" 
+                               FontSize="15" 
+                               Foreground="#707070"/>
+                    <Button Grid.Column="1" 
+                            Content="Browse Files" 
+                            Margin="16,0,0,0" 
+                            Click="BrowseFiles_Click"
+                            Padding="20,10"
+                            Background="#2C2C2C"
+                            Foreground="#FFFFFF"
+                            CornerRadius="8"
+                            FontSize="14"
+                            FontWeight="Medium"/>
+                    <Button Grid.Column="2" 
+                            Content="Browse Folder" 
+                            Margin="12,0,0,0" 
+                            Click="BrowseFolder_Click"
+                            Padding="20,10"
+                            Background="#2C2C2C"
+                            Foreground="#FFFFFF"
+                            CornerRadius="8"
+                            FontSize="14"
+                            FontWeight="Medium"/>
+                </Grid>
+            </Border>
+
+            <!-- Settings Left Column -->
+            <Border Grid.Row="4" Grid.Column="0" 
+                    Background="#1A1A1A" 
+                    CornerRadius="16" 
+                    Padding="28" 
+                    Margin="0,0,8,0"
+                    BoxShadow="0 4 16 0 #11000000">
+                <StackPanel>
+                    <TextBlock Text="Model" 
+                               FontWeight="SemiBold" 
+                               FontSize="15"
+                               Foreground="#FFFFFF"
+                               Margin="0,0,0,12"/>
+                    <ComboBox x:Name="ModelComboBox" 
+                              HorizontalAlignment="Stretch"
+                              Background="#2C2C2C"
+                              Foreground="#FFFFFF"
+                              CornerRadius="8"
+                              Padding="12,8"
+                              FontSize="14"
+                              SelectionChanged="ModelComboBox_SelectionChanged"/>
+                    
+                    <TextBlock Text="Language" 
+                               FontWeight="SemiBold" 
+                               FontSize="15"
+                               Foreground="#FFFFFF"
+                               Margin="0,20,0,12"/>
+                    <ComboBox x:Name="LanguageComboBox" 
+                              SelectedIndex="0"
+                              Background="#2C2C2C"
+                              Foreground="#FFFFFF"
+                              CornerRadius="8"
+                              Padding="12,8"
+                              FontSize="14">
+                        <ComboBoxItem Content="Auto Detect" Tag="auto"/>
+                        <ComboBoxItem Content="English" Tag="en"/>
+                        <ComboBoxItem Content="Spanish" Tag="es"/>
+                        <ComboBoxItem Content="French" Tag="fr"/>
+                        <ComboBoxItem Content="German" Tag="de"/>
+                        <ComboBoxItem Content="Japanese" Tag="ja"/>
+                        <ComboBoxItem Content="Chinese" Tag="zh"/>
+                    </ComboBox>
+                </StackPanel>
+            </Border>
+
+            <!-- Settings Right Column -->
+            <Border Grid.Row="4" Grid.Column="1" 
+                    Background="#1A1A1A" 
+                    CornerRadius="16" 
+                    Padding="28" 
+                    Margin="8,0,0,0"
+                    BoxShadow="0 4 16 0 #11000000">
+                <StackPanel>
+                    <TextBlock Text="Options" 
+                               FontWeight="SemiBold" 
+                               FontSize="15"
+                               Foreground="#FFFFFF"
+                               Margin="0,0,0,12"/>
+                    <CheckBox x:Name="UseVadCheckBox" 
+                              Content="Use Voice Activity Detection" 
+                              IsChecked="True" 
+                              Margin="0,8"
+                              Foreground="#FFFFFF"
+                              FontSize="14"/>
+                    <CheckBox x:Name="UseLlmCheckBox" 
+                              Content="Use LLM Refinement (requires Ollama)" 
+                              Margin="0,8"
+                              Foreground="#FFFFFF"
+                              FontSize="14"/>
+                    
+                    <TextBlock Text="LLM Model" 
+                               FontWeight="SemiBold" 
+                               FontSize="15"
+                               Foreground="#FFFFFF"
+                               Margin="0,20,0,12"/>
+                    <ComboBox x:Name="LlmModelComboBox" 
+                              SelectedIndex="0" 
+                              IsEnabled="False"
+                              Background="#2C2C2C"
+                              Foreground="#FFFFFF"
+                              CornerRadius="8"
+                              Padding="12,8"
+                              FontSize="14">
+                        <ComboBoxItem Content="phi3:mini"/>
+                        <ComboBoxItem Content="llama3.2"/>
+                        <ComboBoxItem Content="mistral"/>
+                    </ComboBox>
+                </StackPanel>
+            </Border>
+
+            <!-- File Queue -->
+            <Border Grid.Row="6" Grid.ColumnSpan="2" 
+                    Background="#1A1A1A" 
+                    CornerRadius="16" 
+                    Padding="28"
+                    BoxShadow="0 4 16 0 #11000000">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="12"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <TextBlock Grid.Row="0" Grid.Column="0" 
+                               Text="File Queue" 
+                               FontWeight="SemiBold" 
+                               FontSize="15"
+                               Foreground="#FFFFFF"/>
+                    <Button Grid.Row="0" Grid.Column="1" 
+                            Content="Clear" 
+                            Click="ClearQueue_Click" 
+                            Padding="16,6"
+                            Background="#2C2C2C"
+                            Foreground="#FFFFFF"
+                            CornerRadius="6"
+                            FontSize="13"/>
+                    
+                    <ListBox Grid.Row="2" Grid.ColumnSpan="2" 
+                             x:Name="FileQueueListBox"
+                             MinHeight="100"
+                             MaxHeight="140"
+                             Background="#0D0D0D"
+                             Foreground="#CCCCCC"
+                             CornerRadius="8"
+                             Padding="12"
+                             FontSize="13"
+                             DragDrop.AllowDrop="True"/>
+                </Grid>
+            </Border>
+
+            <!-- Results Area with Fixed Height -->
+            <Border Grid.Row="8" Grid.ColumnSpan="2" 
+                    Background="#1A1A1A" 
+                    CornerRadius="16" 
+                    Padding="28"
+                    BoxShadow="0 4 16 0 #11000000">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="12"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" 
+                               Text="Results" 
+                               FontWeight="SemiBold" 
+                               FontSize="15"
+                               Foreground="#FFFFFF"/>
+                    <ScrollViewer Grid.Row="2"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Auto">
+                        <TextBox x:Name="ResultsTextBox"
+                                 IsReadOnly="True"
+                                 TextWrapping="Wrap"
+                                 AcceptsReturn="True"
+                                 BorderThickness="0"
+                                 FontFamily="Consolas, Courier New, monospace"
+                                 FontSize="12"
+                                 Foreground="#CCCCCC"
+                                 Background="Transparent"
+                                 MinHeight="80"/>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <!-- Footer with Progress and Buttons -->
+            <Grid Grid.Row="10" Grid.ColumnSpan="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <StackPanel Grid.Column="0" Orientation="Vertical">
+                    <TextBlock x:Name="StatusText" 
+                               Text="Ready" 
+                               FontSize="13" 
+                               Foreground="#707070"
+                               Margin="0,0,0,8"/>
+                    <ProgressBar x:Name="ProgressBar" 
+                                 Height="6" 
+                                 Minimum="0" 
+                                 Maximum="1" 
+                                 Value="0"
+                                 CornerRadius="3"
+                                 Background="#2C2C2C"
+                                 Foreground="#0A84FF"/>
+                </StackPanel>
+                
+                <Button Grid.Column="1" 
+                        Content="About" 
+                        Margin="20,0,0,0" 
+                        Click="About_Click" 
+                        Padding="20,10"
+                        Background="#2C2C2C"
+                        Foreground="#FFFFFF"
+                        CornerRadius="8"
+                        FontSize="14"
+                        FontWeight="Medium"/>
+                <Button Grid.Column="2" 
+                        x:Name="EngageButton" 
+                        Content="Engage!" 
+                        Margin="12,0,0,0" 
+                        Click="Engage_Click" 
+                        Padding="28,10"
+                        Background="#0A84FF"
+                        Foreground="#FFFFFF"
+                        CornerRadius="8"
+                        FontSize="14"
+                        FontWeight="SemiBold"/>
+            </Grid>
+        </Grid>
+    </ScrollViewer>
+</Window>

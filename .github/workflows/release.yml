@@ -1,0 +1,44 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+        dotnet-quality: 'preview'
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build CLI (AOT)
+      run: dotnet publish src/WhatHuh.Cli/WhatHuh.Cli.csproj -c Release -r win-x64 -o publish/cli
+    
+    - name: Build GUI (AOT)
+      run: dotnet publish src/WhatHuh.Gui/WhatHuh.Gui.csproj -c Release -r win-x64 -o publish/gui
+    
+    - name: Create CLI archive
+      run: Compress-Archive -Path publish/cli/* -DestinationPath WhatHuh-CLI-win-x64.zip
+    
+    - name: Create GUI archive
+      run: Compress-Archive -Path publish/gui/* -DestinationPath WhatHuh-GUI-win-x64.zip
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          WhatHuh-CLI-win-x64.zip
+          WhatHuh-GUI-win-x64.zip
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
