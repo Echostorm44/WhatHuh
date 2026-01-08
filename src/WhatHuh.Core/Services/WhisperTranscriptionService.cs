@@ -2,6 +2,7 @@ using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using WhatHuh.Core.Models;
 using Whisper.net;
+using Whisper.net.LibraryLoader;
 
 namespace WhatHuh.Core.Services;
 
@@ -10,10 +11,25 @@ public class WhisperTranscriptionService : IDisposable
     private readonly WhisperFactory Factory;
     private readonly string Language;
     private readonly int BeamSize;
+    public static string LoadedRuntime { get; private set; } = "Unknown";
+
+    static WhisperTranscriptionService()
+    {
+        RuntimeOptions.RuntimeLibraryOrder = 
+        [
+            RuntimeLibrary.Cuda,
+            RuntimeLibrary.Vulkan,
+            RuntimeLibrary.CoreML,
+            RuntimeLibrary.OpenVino,
+            RuntimeLibrary.Cpu,
+            RuntimeLibrary.CpuNoAvx
+        ];
+    }
 
     public WhisperTranscriptionService(string modelPath, string language = "auto", int beamSize = 5)
     {
         Factory = WhisperFactory.FromPath(modelPath);
+        LoadedRuntime = RuntimeOptions.LoadedLibrary?.ToString() ?? "Unknown";
         Language = language;
         BeamSize = beamSize;
     }

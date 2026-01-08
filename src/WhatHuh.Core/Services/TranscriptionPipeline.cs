@@ -52,6 +52,7 @@ public class TranscriptionPipeline : IDisposable
         status?.Report("Loading Whisper model...");
         WhisperService = new WhisperTranscriptionService(whisperModelPath, 
             Options.Language, Options.BeamSize);
+        status?.Report($"Whisper loaded (Runtime: {WhisperTranscriptionService.LoadedRuntime})");
 
         if (Options.UseVad)
         {

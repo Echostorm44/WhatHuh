@@ -228,6 +228,7 @@ public class Program
             });
 
         AnsiConsole.MarkupLine("[green]✓[/] Pipeline initialized");
+        AnsiConsole.MarkupLine($"[grey]  Runtime: {WhatHuh.Core.Services.WhisperTranscriptionService.LoadedRuntime}[/]");
         AnsiConsole.WriteLine();
 
         foreach (var file in files)

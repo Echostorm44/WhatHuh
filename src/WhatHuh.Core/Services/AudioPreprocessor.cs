@@ -11,6 +11,8 @@ public static partial class AudioPreprocessor
 
     [GeneratedRegex(@"time=(\d{2}):(\d{2}):(\d{2})\.(\d{2})")]
     private static partial Regex TimeRegex();
+    
+    private static FfmpegHardwareAccel? CachedHwAccel;
 
     public static async Task<string> ExtractAndPreprocessAudioAsync(
         string videoPath,
@@ -21,7 +23,8 @@ public static partial class AudioPreprocessor
         status?.Report($"Extracting audio from: {Path.GetFileName(videoPath)}");
         progress?.Report(0);
 
-        var arguments = BuildFfmpegArguments(videoPath, outputPath);
+        CachedHwAccel ??= DependencyChecker.DetectFfmpegHardwareAccel();
+        var arguments = BuildFfmpegArguments(videoPath, outputPath, CachedHwAccel.Value);
         
         var startInfo = new ProcessStartInfo
         {
@@ -187,7 +190,7 @@ public static partial class AudioPreprocessor
         return outputPath;
     }
 
-    private static string BuildFfmpegArguments(string inputPath, string outputPath)
+    private static string BuildFfmpegArguments(string inputPath, string outputPath, FfmpegHardwareAccel hwAccel)
     {
         // Advanced filter chain for speech enhancement:
         // - highpass=f=200: Remove sub-vocal rumble and DC offset
@@ -196,6 +199,15 @@ public static partial class AudioPreprocessor
         // - loudnorm=I=-16:tp=-1.5: EBU R128 loudness normalization
         var filterChain = "highpass=f=200,lowpass=f=3500,afftdn=nr=0.21:nf=-25,loudnorm=I=-16:tp=-1.5";
         
-        return $"-y -i \"{inputPath}\" -af \"{filterChain}\" -ar 16000 -ac 1 -c:a pcm_s16le \"{outputPath}\"";
+        var hwAccelInput = hwAccel switch
+        {
+            FfmpegHardwareAccel.Cuda => "-hwaccel cuda -hwaccel_output_format cuda ",
+            FfmpegHardwareAccel.Qsv => "-hwaccel qsv -hwaccel_output_format qsv ",
+            FfmpegHardwareAccel.Amf => "-hwaccel d3d11va ",
+            FfmpegHardwareAccel.VideoToolbox => "-hwaccel videotoolbox ",
+            _ => ""
+        };
+
+        return $"-y {hwAccelInput}-i \"{inputPath}\" -af \"{filterChain}\" -ar 16000 -ac 1 -c:a pcm_s16le \"{outputPath}\"";
     }
 }

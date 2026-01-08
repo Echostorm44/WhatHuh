@@ -4,10 +4,21 @@ using Whisper.net.Ggml;
 
 namespace WhatHuh.Core.Services;
 
+public enum FfmpegHardwareAccel
+{
+    None,
+    Cuda,
+    Qsv,
+    Amf,
+    VideoToolbox
+}
+
 public static class DependencyChecker
 {
     private const string SileroVadModelUrl = "https://huggingface.co/deepghs/silero-vad-onnx/resolve/main/silero_vad.onnx";
     private const string SileroVadModelFileName = "silero_vad.onnx";
+    
+    private static FfmpegHardwareAccel? CachedHwAccel;
 
     public static bool IsFfmpegAvailable()
     {
@@ -26,6 +37,114 @@ public static class DependencyChecker
             using var process = Process.Start(startInfo);
             process?.WaitForExit(5000);
             return process?.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public static FfmpegHardwareAccel DetectFfmpegHardwareAccel()
+    {
+        if (CachedHwAccel.HasValue)
+        {
+            return CachedHwAccel.Value;
+        }
+
+        CachedHwAccel = DetectHwAccelInternal();
+        return CachedHwAccel.Value;
+    }
+
+    private static FfmpegHardwareAccel DetectHwAccelInternal()
+    {
+        try
+        {
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "ffmpeg",
+                Arguments = "-hide_banner -hwaccels",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(startInfo);
+            if (process == null) return FfmpegHardwareAccel.None;
+
+            var output = process.StandardOutput.ReadToEnd();
+            process.WaitForExit(5000);
+
+            if (process.ExitCode != 0) return FfmpegHardwareAccel.None;
+
+            var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            
+            // Check in order of preference: CUDA (NVIDIA), QSV (Intel), AMF (AMD), VideoToolbox (macOS)
+            foreach (var line in lines)
+            {
+                var trimmed = line.Trim().ToLowerInvariant();
+                if (trimmed == "cuda" && HasNvdecSupport())
+                {
+                    return FfmpegHardwareAccel.Cuda;
+                }
+            }
+
+            foreach (var line in lines)
+            {
+                var trimmed = line.Trim().ToLowerInvariant();
+                if (trimmed == "qsv")
+                {
+                    return FfmpegHardwareAccel.Qsv;
+                }
+            }
+
+            foreach (var line in lines)
+            {
+                var trimmed = line.Trim().ToLowerInvariant();
+                if (trimmed == "amf" || trimmed == "d3d11va")
+                {
+                    return FfmpegHardwareAccel.Amf;
+                }
+            }
+
+            foreach (var line in lines)
+            {
+                var trimmed = line.Trim().ToLowerInvariant();
+                if (trimmed == "videotoolbox")
+                {
+                    return FfmpegHardwareAccel.VideoToolbox;
+                }
+            }
+
+            return FfmpegHardwareAccel.None;
+        }
+        catch
+        {
+            return FfmpegHardwareAccel.None;
+        }
+    }
+
+    private static bool HasNvdecSupport()
+    {
+        try
+        {
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "ffmpeg",
+                Arguments = "-hide_banner -decoders",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(startInfo);
+            if (process == null) return false;
+
+            var output = process.StandardOutput.ReadToEnd();
+            process.WaitForExit(5000);
+
+            return output.Contains("h264_cuvid") || output.Contains("hevc_cuvid");
         }
         catch
         {

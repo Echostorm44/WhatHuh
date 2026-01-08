@@ -11,6 +11,7 @@
     <PackageReference Include="Whisper.net" Version="1.9.0" />
     <PackageReference Include="Whisper.net.Runtime" Version="1.9.0" />
     <PackageReference Include="Whisper.net.Runtime.Cuda" Version="1.9.0" />
+    <PackageReference Include="Whisper.net.Runtime.Cuda.Windows" Version="1.9.0" />
     <PackageReference Include="Whisper.net.Runtime.Vulkan" Version="1.9.0" />
     <PackageReference Include="Whisper.net.Runtime.CoreML" Version="1.9.0" />
     <PackageReference Include="Whisper.net.Runtime.OpenVino" Version="1.9.0" />
