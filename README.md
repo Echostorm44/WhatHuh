@@ -23,7 +23,7 @@ WhatHuh comes from the frustration of there not being an easy way to get or crea
 ## Requirements
 
 - **[FFmpeg](https://ffmpeg.org/)** - Must be installed and available in PATH
-- **Ollama** (optional) - For LLM transcript refinement
+- **[Ollama](https://ollama.com/)** (optional) - For LLM transcript refinement
 
 ## CLI Usage
 
