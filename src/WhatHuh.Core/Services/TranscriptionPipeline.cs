@@ -117,10 +117,11 @@ public class TranscriptionPipeline : IDisposable
         var fileName = Path.GetFileName(videoPath);
         var tempWavPath = Path.Combine(Path.GetTempPath(), 
             $"whathuh_{Guid.NewGuid()}.wav");
-
+        var shortName = videoPath.Length > 50 ? $"{videoPath[..47]}..."
+                : videoPath;
         try
         {
-            status?.Report($"Extracting audio: {fileName}");
+            status?.Report($"Extracting audio: {shortName}");
             progress?.Report(0);
             await AudioPreprocessor.ExtractAndPreprocessAudioAsync(videoPath, 
                 tempWavPath, null, progress, cancellationToken);
@@ -192,7 +193,7 @@ public class TranscriptionPipeline : IDisposable
         for (int i = 0;i < videos.Count;i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            
+
             var videoPath = videos[i];
             var videoDir = Path.GetDirectoryName(videoPath)!;
             var videoName = Path.GetFileNameWithoutExtension(videoPath);

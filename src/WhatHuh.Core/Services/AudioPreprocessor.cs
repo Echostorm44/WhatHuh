@@ -11,7 +11,7 @@ public static partial class AudioPreprocessor
 
     [GeneratedRegex(@"time=(\d{2}):(\d{2}):(\d{2})\.(\d{2})")]
     private static partial Regex TimeRegex();
-    
+
     public static async Task<string> ExtractAndPreprocessAudioAsync(
         string videoPath,
         string outputPath,
@@ -19,11 +19,13 @@ public static partial class AudioPreprocessor
         IProgress<double>? progress = null,
         CancellationToken cancellationToken = default)
     {
-        status?.Report($"Extracting audio from: {Path.GetFileName(videoPath)}");
+        var shortName = videoPath.Length > 50 ? $"{videoPath[..47]}..."
+                : videoPath;
+        status?.Report($"Extracting audio from: {shortName}");
         progress?.Report(0);
 
         var arguments = BuildFfmpegArguments(videoPath, outputPath);
-        
+
         var startInfo = new ProcessStartInfo
         {
             FileName = "ffmpeg",
@@ -37,12 +39,16 @@ public static partial class AudioPreprocessor
         using var process = new Process { StartInfo = startInfo };
         var stderr = new StringBuilder();
         double totalDurationSeconds = 0;
-        
+
         process.ErrorDataReceived += (sender, e) =>
         {
-            if (e.Data == null) return;
+            if (e.Data == null)
+            {
+                return;
+            }
+
             stderr.AppendLine(e.Data);
-            
+
             // Parse duration from ffmpeg output
             if (totalDurationSeconds == 0)
             {
@@ -55,7 +61,7 @@ public static partial class AudioPreprocessor
                                            int.Parse(durationMatch.Groups[4].Value) / 100.0;
                 }
             }
-            
+
             // Parse current time progress
             if (totalDurationSeconds > 0)
             {
@@ -70,7 +76,7 @@ public static partial class AudioPreprocessor
                 }
             }
         };
-        
+
         process.Start();
         process.BeginErrorReadLine();
 
@@ -106,11 +112,11 @@ public static partial class AudioPreprocessor
         CancellationToken cancellationToken = default)
     {
         var tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.wav");
-        
+
         try
         {
             await ExtractAndPreprocessAudioAsync(videoPath, tempPath, status, progress, cancellationToken);
-            
+
             var memoryStream = new MemoryStream();
             await using (var fileStream = File.OpenRead(tempPath))
             {
@@ -153,12 +159,16 @@ public static partial class AudioPreprocessor
         using var process = new Process { StartInfo = startInfo };
         var stderr = new StringBuilder();
         double totalDurationSeconds = 0;
-        
+
         process.ErrorDataReceived += (sender, e) =>
         {
-            if (e.Data == null) return;
+            if (e.Data == null)
+            {
+                return;
+            }
+
             stderr.AppendLine(e.Data);
-            
+
             if (totalDurationSeconds == 0)
             {
                 var durationMatch = DurationRegex().Match(e.Data);
@@ -170,7 +180,7 @@ public static partial class AudioPreprocessor
                                            int.Parse(durationMatch.Groups[4].Value) / 100.0;
                 }
             }
-            
+
             if (totalDurationSeconds > 0)
             {
                 var timeMatch = TimeRegex().Match(e.Data);
@@ -184,7 +194,7 @@ public static partial class AudioPreprocessor
                 }
             }
         };
-        
+
         process.Start();
         process.BeginErrorReadLine();
 
