@@ -1,8 +1,6 @@
 using Spectre.Console;
 using System.CommandLine;
-using System.CommandLine.Builder;
-using System.CommandLine.Help;
-using System.CommandLine.Parsing;
+using System.CommandLine.Invocation;
 using WhatHuh.Core.Models;
 using WhatHuh.Core.Services;
 
@@ -21,80 +19,141 @@ public class Program
             AnsiConsole.MarkupLine("\n[yellow]Cancellation requested, cleaning up...[/]");
         };
 
-        var inputArg = new Argument<string>("input", 
-            "Input video file, directory, or glob pattern (e.g., *.mp4)");
-        var outputOption = new Option<string?>([ "--output", "-o" ], 
-            "Output SRT file path (default: same as input with .srt extension)");
-        var modelOption = new Option<string>([ "--model", "-m" ], 
-            () => "base", "Whisper model to use for transcription");
-        var languageOption = new Option<string>([ "--language", "-l" ], 
-            () => "auto", "Language code or 'auto' for detection");
-        var noVadOption = new Option<bool>([ "--no-vad", "-n" ], 
-            "Disable Voice Activity Detection");
-        var refineOption = new Option<bool>([ "--refine", "-r" ], 
-            "Enable LLM refinement using Ollama");
-        var llmModelOption = new Option<string>([ "--llm-model" ], 
-            () => "phi3:mini", "LLM model for refinement");
-        var beamSizeOption = new Option<int>([ "--beam-size", "-b" ], 
-            () => 5, "Beam size for decoding (higher = better quality, slower)");
+        var inputArg = new Argument<string>("input") 
+        { 
+            Description = "Input video file, directory, or glob pattern (e.g., *.mp4)"
+        };
+        
+        var outputOption = new Option<string?>("--output") 
+        { 
+            Description = "Output SRT file path (default: same as input with .srt extension)"
+        };
+        outputOption.Aliases.Add("-o");
+        
+        var modelOption = new Option<string>("--model") 
+        { 
+            Description = "Whisper model to use for transcription",
+            DefaultValueFactory = _ => "base" 
+        };
+        modelOption.Aliases.Add("-m");
+        
+        var languageOption = new Option<string>("--language") 
+        { 
+            Description = "Language code or 'auto' for detection",
+            DefaultValueFactory = _ => "auto" 
+        };
+        languageOption.Aliases.Add("-l");
+        
+        var noVadOption = new Option<bool>("--no-vad") 
+        { 
+            Description = "Disable Voice Activity Detection"
+        };
+        noVadOption.Aliases.Add("-n");
+        
+        var refineOption = new Option<bool>("--refine") 
+        { 
+            Description = "Enable LLM refinement using Ollama"
+        };
+        refineOption.Aliases.Add("-r");
+        
+        var llmModelOption = new Option<string>("--llm-model") 
+        { 
+            Description = "LLM model for refinement",
+            DefaultValueFactory = _ => "phi3:mini" 
+        };
+        
+        var beamSizeOption = new Option<int>("--beam-size") 
+        { 
+            Description = "Beam size for decoding (higher = better quality, slower)",
+            DefaultValueFactory = _ => 5 
+        };
+        beamSizeOption.Aliases.Add("-b");
 
         var transcribeCommand = new Command("transcribe", 
-            "Transcribe video files to SRT subtitles")
-        {
-            inputArg, outputOption, modelOption, languageOption, noVadOption, 
-                refineOption, llmModelOption, beamSizeOption
-        };
-        transcribeCommand.AddAlias("-t");
+            "Transcribe video files to SRT subtitles");
+        transcribeCommand.Arguments.Add(inputArg);
+        transcribeCommand.Options.Add(outputOption);
+        transcribeCommand.Options.Add(modelOption);
+        transcribeCommand.Options.Add(languageOption);
+        transcribeCommand.Options.Add(noVadOption);
+        transcribeCommand.Options.Add(refineOption);
+        transcribeCommand.Options.Add(llmModelOption);
+        transcribeCommand.Options.Add(beamSizeOption);
+        transcribeCommand.Aliases.Add("-t");
 
-        transcribeCommand.SetHandler(async (input, output, model, language, noVad, 
-            refine, llmModel, beamSize) =>
+        transcribeCommand.SetAction(async (parseResult, cancellationToken) =>
         {
+            var input = parseResult.GetValue(inputArg)!;
+            var output = parseResult.GetValue(outputOption);
+            var model = parseResult.GetValue(modelOption)!;
+            var language = parseResult.GetValue(languageOption)!;
+            var noVad = parseResult.GetValue(noVadOption);
+            var refine = parseResult.GetValue(refineOption);
+            var llmModel = parseResult.GetValue(llmModelOption)!;
+            var beamSize = parseResult.GetValue(beamSizeOption);
+            
             await RunTranscribeAsync(input, output, model, language, noVad, refine, 
                 llmModel, beamSize);
-        }, inputArg, outputOption, modelOption, languageOption, noVadOption, 
-            refineOption, llmModelOption, beamSizeOption);
+        });
 
-        var ffmpegOption = new Option<bool>([ "--ffmpeg", "-f" ], 
-            "Check if FFmpeg is available");
-        var vadOption = new Option<bool>([ "--vad", "-v" ], 
-            "Download Silero VAD model");
-        var whisperOption = new Option<string?>([ "--whisper", "-w" ], 
-            "Download specified Whisper model");
-        var ollamaOption = new Option<bool>([ "--ollama" ], "Check Ollama availability");
-        var allOption = new Option<bool>([ "--all", "-a" ], "Setup all dependencies");
-
-        var setupCommand = new Command("setup", "Setup and download required dependencies")
-        {
-            ffmpegOption, vadOption, whisperOption, ollamaOption, allOption
+        var ffmpegOption = new Option<bool>("--ffmpeg") 
+        { 
+            Description = "Check if FFmpeg is available"
         };
-        setupCommand.AddAlias("-s");
+        ffmpegOption.Aliases.Add("-f");
+        
+        var vadOption = new Option<bool>("--vad") 
+        { 
+            Description = "Download Silero VAD model"
+        };
+        vadOption.Aliases.Add("-v");
+        
+        var whisperOption = new Option<string?>("--whisper") 
+        { 
+            Description = "Download specified Whisper model"
+        };
+        whisperOption.Aliases.Add("-w");
+        
+        var ollamaOption = new Option<bool>("--ollama") 
+        { 
+            Description = "Check Ollama availability"
+        };
+        
+        var allOption = new Option<bool>("--all") 
+        { 
+            Description = "Setup all dependencies"
+        };
+        allOption.Aliases.Add("-a");
 
-        setupCommand.SetHandler(async (ffmpeg, vad, whisper, ollama, all) =>
+        var setupCommand = new Command("setup", "Setup and download required dependencies");
+        setupCommand.Options.Add(ffmpegOption);
+        setupCommand.Options.Add(vadOption);
+        setupCommand.Options.Add(whisperOption);
+        setupCommand.Options.Add(ollamaOption);
+        setupCommand.Options.Add(allOption);
+        setupCommand.Aliases.Add("-s");
+
+        setupCommand.SetAction(async (parseResult, cancellationToken) =>
         {
+            var ffmpeg = parseResult.GetValue(ffmpegOption);
+            var vad = parseResult.GetValue(vadOption);
+            var whisper = parseResult.GetValue(whisperOption);
+            var ollama = parseResult.GetValue(ollamaOption);
+            var all = parseResult.GetValue(allOption);
+            
             await RunSetupAsync(ffmpeg, vad, whisper, ollama, all);
-        }, ffmpegOption, vadOption, whisperOption, ollamaOption, allOption);
+        });
 
         var infoCommand = new Command("info", "Display system and configuration information");
-        infoCommand.AddAlias("-i");
-        infoCommand.SetHandler(async () => await RunInfoAsync());
+        infoCommand.Aliases.Add("-i");
+        infoCommand.SetAction(async (parseResult, cancellationToken) => await RunInfoAsync());
 
-        var rootCommand = new RootCommand(GetFullDescription())
-        {
-            transcribeCommand, setupCommand, infoCommand
-        };
+        var rootCommand = new RootCommand(GetFullDescription());
+        rootCommand.Subcommands.Add(transcribeCommand);
+        rootCommand.Subcommands.Add(setupCommand);
+        rootCommand.Subcommands.Add(infoCommand);
 
-        var parser = new CommandLineBuilder(rootCommand)
-            .UseDefaults()
-            .UseHelp(ctx =>
-            {
-                ctx.HelpBuilder.CustomizeLayout(_ => HelpBuilder.Default
-                    .GetLayout()
-                    .Prepend(_ => AnsiConsole.Write(new FigletText("WhatHuh")
-                    .Color(Color.Cyan1))));
-            })
-            .Build();
-
-        return await parser.InvokeAsync(args);
+        return await rootCommand.Parse(args).InvokeAsync();
     }
 
     private static string GetFullDescription()
