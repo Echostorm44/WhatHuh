@@ -6,6 +6,10 @@ So if you have older movies or tv shows that are impossible to get subtitles for
 
 WhatHuh comes from the frustration of there not being an easy way to get or create subs so that I can still enjoy watching things despite my hearing loss.
 
+<img width="1310" height="585" alt="image" src="https://github.com/user-attachments/assets/3b41b37e-43b6-4b94-a481-4c0e60f6153b" />
+
+<img width="1001" height="1026" alt="image" src="https://github.com/user-attachments/assets/5cd43e38-63cc-41f9-9630-d43bebd10e4f" />
+
 ## Features
 
 - **Cross-platform** - AvaloniaUI GUI works on Windows, macOS, and Linux
