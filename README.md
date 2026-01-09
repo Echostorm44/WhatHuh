@@ -103,8 +103,8 @@ This project uses OpenAI's Whisper model to create the subtitles. There are seve
 
 Whisper.net automatically selects the best available runtime:
 
-1. **CUDA** - NVidia GPUs with CUDA drivers
-    Requires CUDA 13.1 or later and updated NVIDIA drivers!
+1. **[CUDA](https://developer.nvidia.com/cuda-13-0-0-download-archive)** - NVidia GPUs with CUDA drivers
+    Requires [CUDA](https://developer.nvidia.com/cuda-13-0-0-download-archive) 13.1 or later and updated NVIDIA drivers!
 2. **Vulkan** - Windows with Vulkan support
 3. **CoreML** - Apple Silicon Macs
 4. **OpenVINO** - Intel hardware acceleration
@@ -119,7 +119,10 @@ The Silero VAD integration filters out silence and non-speech audio before trans
 
 ## LLM Refinement (Optional)
 
-For even better results, enable LLM refinement with Ollama:
+For possibly better results, enable LLM refinement with Ollama.
+I really need to stress that this isn't always perfect and results vary widely based on model and on the text it is working with. 
+
+With that said:
 
 1. Install [Ollama](https://ollama.ai)
 2. Pull a model: `ollama pull phi3:mini`
