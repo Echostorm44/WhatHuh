@@ -63,30 +63,42 @@ public partial class MainWindow : Window
 
     private void OnDragOver(object? sender, DragEventArgs e)
     {
-        e.DragEffects = e.Data.Contains(DataFormats.Files) 
-            ? DragDropEffects.Copy 
-            : DragDropEffects.None;
+        var hasFiles = e.DataTransfer.Formats.Any(f => f == DataFormat.File);
+        e.DragEffects = hasFiles ? DragDropEffects.Copy : DragDropEffects.None;
     }
 
     private async void OnDrop(object? sender, DragEventArgs e)
     {
-        if (!e.Data.Contains(DataFormats.Files))
+        var hasFiles = e.DataTransfer.Formats.Any(f => f == DataFormat.File);
+        if (!hasFiles)
         {
             return;
         }
 
-        var files = e.Data.GetFiles();
-        if (files == null)
+        foreach (var item in e.DataTransfer.Items)
         {
-            return;
-        }
-
-        foreach (var file in files)
-        {
-            var path = file.Path.LocalPath;
-            if (!string.IsNullOrEmpty(path) && !FilesToConvert.Contains(path))
+            if (item.Formats.Any(f => f == DataFormat.File))
             {
-                FilesToConvert.Add(path);
+                var data = item.TryGetRaw(DataFormat.File);
+                if (data is IStorageItem storageItem)
+                {
+                    var path = storageItem.Path.LocalPath;
+                    if (!string.IsNullOrEmpty(path) && !FilesToConvert.Contains(path))
+                    {
+                        FilesToConvert.Add(path);
+                    }
+                }
+                else if (data is IEnumerable<IStorageItem> storageItems)
+                {
+                    foreach (var si in storageItems)
+                    {
+                        var path = si.Path.LocalPath;
+                        if (!string.IsNullOrEmpty(path) && !FilesToConvert.Contains(path))
+                        {
+                            FilesToConvert.Add(path);
+                        }
+                    }
+                }
             }
         }
     }
