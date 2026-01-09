@@ -132,38 +132,48 @@ public class LlmRefinementService
     private static string BuildRefinementPrompt(string text)
     {
         return $"""
-            You are a transcript editor. Your task is to clean up the following speech transcription.
-            
-            Rules:
-            1. Fix spelling errors and grammar mistakes
-            2. Keep the [number] prefix for each line
-            3. Fix capitalization, especially for proper nouns and acronyms
-            4. Preserve the original phrasing as much as possible
-            5. Only return the corrected text, nothing else
-            
-            Original text:
+            You are a subtitle editor for speech transcriptions. Your job is to fix errors while preserving exactly what was said.
+
+            STRICT RULES:
+            1. NEVER add words that weren't spoken - subtitles must match the audio exactly
+            2. NEVER change informal speech (gonna, wanna, gotta) to formal (going to, want to, got to)
+            3. NEVER remove filler words unless they are clearly transcription errors
+            4. Fix spelling errors (e.g., "pettiness" not "petiness")
+            5. Fix punctuation (add commas, periods, question marks where appropriate)
+            6. Fix capitalization for proper nouns and sentence starts
+            7. Use context to fix misheard words ONLY when you are highly confident
+               Example: "Get out from underwear!" -> "Get out from under there!" (clearly misheard)
+            8. Keep the [number] prefix for each line
+            9. Return ONLY the corrected segments, no explanations
+
+            Original:
             {text}
-            
-            Corrected text:
+
+            Corrected:
             """;
     }
 
     private static string BuildBatchRefinementPrompt(string text)
     {
         return $"""
-            You are a transcript editor. Clean up the following transcription segments.
-            Each segment is prefixed with [number]. Maintain the same format in your response.
-            
-            Rules:
-            1. Fix spelling errors and grammar mistakes
-            3. Fix capitalization, especially for proper nouns and acronyms
-            4. Preserve the original phrasing
-            5. Keep the [number] prefix for each line
-            
+            You are a subtitle editor for speech transcriptions. Your job is to fix errors while preserving exactly what was said.
+
+            STRICT RULES:
+            1. NEVER add words that weren't spoken - subtitles must match the audio exactly
+            2. NEVER change informal speech (gonna, wanna, gotta) to formal (going to, want to, got to)  
+            3. NEVER remove filler words unless they are clearly transcription errors
+            4. Fix spelling errors (e.g., "pettiness" not "petiness")
+            5. Fix punctuation (add commas, periods, question marks where appropriate)
+            6. Fix capitalization for proper nouns and sentence starts
+            7. Use context to fix misheard words ONLY when you are highly confident
+               Example: "Get out from underwear!" -> "Get out from under there!" (clearly misheard)
+            8. Keep the [number] prefix for each line
+            9. Return ONLY the corrected segments, no explanations
+
             Segments:
             {text}
-            
-            Corrected segments:
+
+            Corrected:
             """;
     }
 

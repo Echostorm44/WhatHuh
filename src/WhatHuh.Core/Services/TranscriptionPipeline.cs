@@ -162,7 +162,7 @@ public class TranscriptionPipeline : IDisposable
             {
                 status?.Report("Refining with LLM...");
                 progress?.Report(0);
-                results = await LlmService.RefineBatchAsync(results, 10, progress, cancellationToken);
+                results = await LlmService.RefineBatchAsync(results, 25, progress, cancellationToken);
             }
 
             status?.Report("Writing subtitle file...");
