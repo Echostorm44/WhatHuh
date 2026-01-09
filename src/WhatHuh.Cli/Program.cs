@@ -407,7 +407,12 @@ public class Program
         }
         catch (Exception ex)
         {
-            AnsiConsole.WriteException(ex, ExceptionFormats.ShortenEverything);
+            AnsiConsole.MarkupLine($"[red]Error:[/] {ex.Message.EscapeMarkup()}");
+            if (ex.InnerException != null)
+            {
+                AnsiConsole.MarkupLine($"[grey]  Inner: {ex.InnerException.Message.EscapeMarkup()}[/]");
+            }
+            AnsiConsole.MarkupLine($"[grey]  Type: {ex.GetType().Name}[/]");
         }
     }
 
