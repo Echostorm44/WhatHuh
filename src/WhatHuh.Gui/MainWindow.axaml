@@ -8,7 +8,21 @@
         Width="1000" Height="750"
         MinWidth="800" MinHeight="600"
         WindowStartupLocation="CenterScreen"
-        Background="#0D0D0D">
+        Background="#0D0D0D"
+        FontFamily="SF Pro Display, Segoe UI, sans-serif">
+
+    <Window.Styles>
+        <Style Selector="Button">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1.02)"/>
+        </Style>
+    </Window.Styles>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <Grid Margin="32">
@@ -33,7 +47,7 @@
             <!-- Header -->
             <TextBlock Grid.Row="0" Grid.ColumnSpan="2" 
                        Text="What? Huh? Subtitler" 
-                       FontSize="32" FontWeight="Light"
+                       FontSize="32" FontWeight="ExtraLight"
                        Foreground="#FFFFFF"
                        Margin="0,0,0,0"/>
 
@@ -86,7 +100,7 @@
                     BoxShadow="0 4 16 0 #11000000">
                 <StackPanel>
                     <TextBlock Text="Model" 
-                               FontWeight="SemiBold" 
+                               FontWeight="Medium" 
                                FontSize="15"
                                Foreground="#FFFFFF"
                                Margin="0,0,0,12"/>
@@ -97,10 +111,11 @@
                               CornerRadius="8"
                               Padding="12,8"
                               FontSize="14"
-                              SelectionChanged="ModelComboBox_SelectionChanged"/>
+                              SelectionChanged="ModelComboBox_SelectionChanged"
+                              ToolTip.Tip="Larger models are more accurate but slower. Base is good for clear audio."/>
                     
                     <TextBlock Text="Language" 
-                               FontWeight="SemiBold" 
+                               FontWeight="Medium" 
                                FontSize="15"
                                Foreground="#FFFFFF"
                                Margin="0,20,0,12"/>
@@ -110,7 +125,8 @@
                               Foreground="#FFFFFF"
                               CornerRadius="8"
                               Padding="12,8"
-                              FontSize="14">
+                              FontSize="14"
+                              ToolTip.Tip="Auto detect works for most videos. Select a specific language for better accuracy.">
                         <ComboBoxItem Content="Auto Detect" Tag="auto"/>
                         <ComboBoxItem Content="English" Tag="en"/>
                         <ComboBoxItem Content="Spanish" Tag="es"/>
@@ -123,7 +139,7 @@
             </Border>
 
             <!-- Settings Right Column -->
-            <Border Grid.Row="4" Grid.Column="1" 
+            <Border Grid.Row="4" Grid.Column="1"
                     Background="#1A1A1A" 
                     CornerRadius="16" 
                     Padding="28" 
@@ -131,7 +147,7 @@
                     BoxShadow="0 4 16 0 #11000000">
                 <StackPanel>
                     <TextBlock Text="Options" 
-                               FontWeight="SemiBold" 
+                               FontWeight="Medium" 
                                FontSize="15"
                                Foreground="#FFFFFF"
                                Margin="0,0,0,12"/>
@@ -140,15 +156,17 @@
                               IsChecked="True" 
                               Margin="0,8"
                               Foreground="#FFFFFF"
-                              FontSize="14"/>
+                              FontSize="14"
+                              ToolTip.Tip="Detects speech segments to improve accuracy and reduce hallucinations in silent parts"/>
                     <CheckBox x:Name="UseLlmCheckBox" 
                               Content="Use LLM Refinement (requires Ollama)" 
                               Margin="0,8"
                               Foreground="#FFFFFF"
-                              FontSize="14"/>
+                              FontSize="14"
+                              ToolTip.Tip="Uses a local language model to fix grammar and spelling in transcriptions"/>
                     
                     <TextBlock Text="LLM Model" 
-                               FontWeight="SemiBold" 
+                               FontWeight="Medium" 
                                FontSize="15"
                                Foreground="#FFFFFF"
                                Margin="0,20,0,12"/>
@@ -159,7 +177,8 @@
                               Foreground="#FFFFFF"
                               CornerRadius="8"
                               Padding="12,8"
-                              FontSize="14">
+                              FontSize="14"
+                              ToolTip.Tip="Select which Ollama model to use for transcript refinement">
                         <ComboBoxItem Content="phi3:mini"/>
                         <ComboBoxItem Content="llama3.2"/>
                         <ComboBoxItem Content="mistral"/>
@@ -168,7 +187,7 @@
             </Border>
 
             <!-- File Queue -->
-            <Border Grid.Row="6" Grid.ColumnSpan="2" 
+            <Border Grid.Row="6" Grid.ColumnSpan="2"
                     Background="#1A1A1A" 
                     CornerRadius="16" 
                     Padding="28"
@@ -202,7 +221,7 @@
                              x:Name="FileQueueListBox"
                              MinHeight="100"
                              MaxHeight="140"
-                             Background="#0D0D0D"
+                             Background="Transparent"
                              Foreground="#CCCCCC"
                              CornerRadius="8"
                              Padding="12"
@@ -251,6 +270,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 
                 <StackPanel Grid.Column="0" Orientation="Vertical">
@@ -266,7 +286,7 @@
                                  Value="0"
                                  CornerRadius="3"
                                  Background="#2C2C2C"
-                                 Foreground="#0A84FF"/>
+                                 Foreground="#007AFF"/>
                 </StackPanel>
                 
                 <Button Grid.Column="1" 
@@ -278,18 +298,30 @@
                         Foreground="#FFFFFF"
                         CornerRadius="8"
                         FontSize="14"
-                        FontWeight="Medium"/>
+                        FontWeight="Normal"/>
                 <Button Grid.Column="2" 
+                        x:Name="CancelButton" 
+                        Content="Cancel" 
+                        Margin="12,0,0,0" 
+                        Click="Cancel_Click" 
+                        Padding="20,10"
+                        Background="#FF3B30"
+                        Foreground="#FFFFFF"
+                        CornerRadius="8"
+                        FontSize="14"
+                        FontWeight="Medium"
+                        IsVisible="False"/>
+                <Button Grid.Column="3" 
                         x:Name="EngageButton" 
                         Content="Engage!" 
                         Margin="12,0,0,0" 
                         Click="Engage_Click" 
                         Padding="28,10"
-                        Background="#0A84FF"
+                        Background="#007AFF"
                         Foreground="#FFFFFF"
                         CornerRadius="8"
                         FontSize="14"
-                        FontWeight="SemiBold"/>
+                        FontWeight="Medium"/>
             </Grid>
         </Grid>
     </ScrollViewer>

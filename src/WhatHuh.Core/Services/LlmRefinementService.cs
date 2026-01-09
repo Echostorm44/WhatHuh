@@ -20,7 +20,7 @@ public class LlmRefinementService
         ModelName = modelName;
     }
 
-    public async Task<string> RefineTranscriptAsync(string rawText)
+    public async Task<string> RefineTranscriptAsync(string rawText, CancellationToken cancellationToken = default)
     {
         var prompt = BuildRefinementPrompt(rawText);
 
@@ -38,25 +38,28 @@ public class LlmRefinementService
 
         var json = JsonSerializer.Serialize(request, OllamaJsonContext.Default.OllamaRequest);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
-        var response = await HttpClient.PostAsync("/api/generate", content);
+        var response = await HttpClient.PostAsync("/api/generate", content, cancellationToken);
         response.EnsureSuccessStatusCode();
 
-        var responseJson = await response.Content.ReadAsStringAsync();
+        var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
         var result = JsonSerializer.Deserialize(responseJson, OllamaJsonContext.Default.OllamaResponse);
         return result?.Response?.Trim() ?? rawText;
     }
 
     public async Task<List<Models.TranscriptionResult>> RefineSegmentsAsync(
         List<Models.TranscriptionResult> segments,
-        IProgress<double>? progress = null)
+        IProgress<double>? progress = null,
+        CancellationToken cancellationToken = default)
     {
         var refinedSegments = new List<Models.TranscriptionResult>();
         var totalSegments = segments.Count;
 
         for (int i = 0;i < segments.Count;i++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            
             var segment = segments[i];
-            var refinedText = await RefineTranscriptAsync(segment.Text);
+            var refinedText = await RefineTranscriptAsync(segment.Text, cancellationToken);
 
             refinedSegments.Add(new Models.TranscriptionResult
             {
@@ -75,7 +78,8 @@ public class LlmRefinementService
     public async Task<List<Models.TranscriptionResult>> RefineBatchAsync(
         List<Models.TranscriptionResult> segments,
         int batchSize = 10,
-        IProgress<double>? progress = null)
+        IProgress<double>? progress = null,
+        CancellationToken cancellationToken = default)
     {
         var refinedSegments = new List<Models.TranscriptionResult>();
         var batches = segments.Chunk(batchSize).ToList();
@@ -83,6 +87,8 @@ public class LlmRefinementService
 
         foreach (var batch in batches)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            
             var combinedText = string.Join("\n", batch.Select(s => 
                 $"[{s.Sequence}] {s.Text}"));
             var prompt = BuildBatchRefinementPrompt(combinedText);
@@ -101,11 +107,11 @@ public class LlmRefinementService
 
             var json = JsonSerializer.Serialize(request, OllamaJsonContext.Default.OllamaRequest);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = await HttpClient.PostAsync("/api/generate", content);
+            var response = await HttpClient.PostAsync("/api/generate", content, cancellationToken);
 
             if (response.IsSuccessStatusCode)
             {
-                var responseJson = await response.Content.ReadAsStringAsync();
+                var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
                 var result = JsonSerializer.Deserialize(responseJson, OllamaJsonContext.Default.OllamaResponse);
                 var refinedLines = ParseBatchResponse(result?.Response ?? "", 
                     batch.ToList());
@@ -248,6 +254,72 @@ public class LlmRefinementService
         {
             return [];
         }
+    }
+
+    public static async Task<bool> PullModelAsync(string modelName, IProgress<string>? status = null, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var client = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
+            
+            var request = new { name = modelName, stream = true };
+            var json = JsonSerializer.Serialize(request);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            
+            var requestMessage = new HttpRequestMessage(HttpMethod.Post, $"{OllamaBaseUrl}/api/pull")
+            {
+                Content = content
+            };
+            
+            using var response = await client.SendAsync(requestMessage, 
+                HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                return false;
+            }
+
+            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var reader = new StreamReader(stream);
+            
+            string? line;
+            while ((line = await reader.ReadLineAsync(cancellationToken)) != null)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                
+                if (string.IsNullOrEmpty(line)) continue;
+                
+                // Parse status from JSON response
+                var statusIndex = line.IndexOf("\"status\":\"", StringComparison.Ordinal);
+                if (statusIndex != -1)
+                {
+                    statusIndex += 10;
+                    var endIndex = line.IndexOf("\"", statusIndex, StringComparison.Ordinal);
+                    if (endIndex != -1)
+                    {
+                        var pullStatus = line[statusIndex..endIndex];
+                        status?.Report(pullStatus);
+                    }
+                }
+            }
+
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public static async Task<bool> IsModelAvailableAsync(string modelName)
+    {
+        var models = await GetAvailableModelsAsync();
+        return models.Any(m => m.Equals(modelName, StringComparison.OrdinalIgnoreCase) ||
+                               m.StartsWith(modelName + ":", StringComparison.OrdinalIgnoreCase));
     }
 
 }

@@ -56,7 +56,8 @@ public class SileroVadDetector : IDisposable
     }
 
     public List<SpeechSegment> GetSpeechSegments(string wavFilePath,
-        IProgress<double>? progress = null)
+        IProgress<double>? progress = null,
+        CancellationToken cancellationToken = default)
     {
         Reset();
 
@@ -69,6 +70,8 @@ public class SileroVadDetector : IDisposable
 
         while (audioFile.Read(buffer, 0, buffer.Length) > 0)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            
             float speechProb = Model.Call([ buffer ], SamplingRate)[0];
             speechProbList.Add(speechProb);
             progress?.Report((double)audioFile.Position / totalSamples);
@@ -77,7 +80,8 @@ public class SileroVadDetector : IDisposable
         return CalculateProb(speechProbList);
     }
 
-    public List<SpeechSegment> GetSpeechSegments(Stream audioStream)
+    public List<SpeechSegment> GetSpeechSegments(Stream audioStream,
+        CancellationToken cancellationToken = default)
     {
         Reset();
 
@@ -89,6 +93,8 @@ public class SileroVadDetector : IDisposable
 
         while (sampleProvider.Read(buffer, 0, buffer.Length) > 0)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            
             float speechProb = Model.Call([ buffer ], SamplingRate)[0];
             speechProbList.Add(speechProb);
         }

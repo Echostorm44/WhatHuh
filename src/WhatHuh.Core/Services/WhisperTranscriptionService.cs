@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using WhatHuh.Core.Models;
@@ -42,7 +43,8 @@ public class WhisperTranscriptionService : IDisposable
 
     public async IAsyncEnumerable<TranscriptionResult> TranscribeAsync(
         Stream audioStream,
-        IProgress<double>? progress = null)
+        IProgress<double>? progress = null,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var builder = Factory.CreateBuilder()
             .WithLanguage(Language);
@@ -52,8 +54,10 @@ public class WhisperTranscriptionService : IDisposable
         var sequence = 1;
         var totalLength = audioStream.Length;
 
-        await foreach (var result in processor.ProcessAsync(audioStream))
+        await foreach (var result in processor.ProcessAsync(audioStream, cancellationToken))
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            
             yield return new TranscriptionResult
             {
                 Sequence = sequence++,
@@ -72,7 +76,8 @@ public class WhisperTranscriptionService : IDisposable
     public async IAsyncEnumerable<TranscriptionResult> TranscribeWithVadAsync(
         string audioFilePath,
         List<SpeechSegment> speechSegments,
-        IProgress<double>? progress = null)
+        IProgress<double>? progress = null,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var builder = Factory.CreateBuilder()
             .WithLanguage(Language);
@@ -85,6 +90,8 @@ public class WhisperTranscriptionService : IDisposable
 
         foreach (var segment in speechSegments)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            
             if (segment.StartSeconds == null || segment.EndSeconds == null)
             {
                 continue;
@@ -94,7 +101,7 @@ public class WhisperTranscriptionService : IDisposable
                 segment.StartSeconds.Value, 
                 segment.EndSeconds.Value);
 
-            await foreach (var result in processor.ProcessAsync(segmentStream))
+            await foreach (var result in processor.ProcessAsync(segmentStream, cancellationToken))
             {
                 var offsetStart = TimeSpan.FromSeconds(segment.StartSeconds.Value);
                 yield return new TranscriptionResult

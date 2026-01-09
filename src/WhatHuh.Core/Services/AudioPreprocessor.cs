@@ -12,19 +12,17 @@ public static partial class AudioPreprocessor
     [GeneratedRegex(@"time=(\d{2}):(\d{2}):(\d{2})\.(\d{2})")]
     private static partial Regex TimeRegex();
     
-    private static FfmpegHardwareAccel? CachedHwAccel;
-
     public static async Task<string> ExtractAndPreprocessAudioAsync(
         string videoPath,
         string outputPath,
         IProgress<string>? status = null,
-        IProgress<double>? progress = null)
+        IProgress<double>? progress = null,
+        CancellationToken cancellationToken = default)
     {
         status?.Report($"Extracting audio from: {Path.GetFileName(videoPath)}");
         progress?.Report(0);
 
-        CachedHwAccel ??= DependencyChecker.DetectFfmpegHardwareAccel();
-        var arguments = BuildFfmpegArguments(videoPath, outputPath, CachedHwAccel.Value);
+        var arguments = BuildFfmpegArguments(videoPath, outputPath);
         
         var startInfo = new ProcessStartInfo
         {
@@ -75,10 +73,21 @@ public static partial class AudioPreprocessor
         
         process.Start();
         process.BeginErrorReadLine();
-        
-        // Drain stdout to prevent buffer deadlock
-        await process.StandardOutput.ReadToEndAsync();
-        await process.WaitForExitAsync();
+
+        try
+        {
+            // Drain stdout to prevent buffer deadlock
+            await process.StandardOutput.ReadToEndAsync(cancellationToken);
+            await process.WaitForExitAsync(cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+            }
+            throw;
+        }
 
         if (process.ExitCode != 0)
         {
@@ -93,18 +102,19 @@ public static partial class AudioPreprocessor
     public static async Task<MemoryStream> ExtractToMemoryStreamAsync(
         string videoPath,
         IProgress<string>? status = null,
-        IProgress<double>? progress = null)
+        IProgress<double>? progress = null,
+        CancellationToken cancellationToken = default)
     {
         var tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.wav");
         
         try
         {
-            await ExtractAndPreprocessAudioAsync(videoPath, tempPath, status, progress);
+            await ExtractAndPreprocessAudioAsync(videoPath, tempPath, status, progress, cancellationToken);
             
             var memoryStream = new MemoryStream();
             await using (var fileStream = File.OpenRead(tempPath))
             {
-                await fileStream.CopyToAsync(memoryStream);
+                await fileStream.CopyToAsync(memoryStream, cancellationToken);
             }
             memoryStream.Position = 0;
             return memoryStream;
@@ -122,12 +132,13 @@ public static partial class AudioPreprocessor
         string videoPath,
         string outputPath,
         IProgress<string>? status = null,
-        IProgress<double>? progress = null)
+        IProgress<double>? progress = null,
+        CancellationToken cancellationToken = default)
     {
         status?.Report($"Extracting raw audio from: {Path.GetFileName(videoPath)}");
         progress?.Report(0);
 
-        var arguments = $"-y -i \"{videoPath}\" -ar 16000 -ac 1 -c:a pcm_s16le \"{outputPath}\"";
+        var arguments = $"-y -vn -i \"{videoPath}\" -ar 16000 -ac 1 -c:a pcm_s16le \"{outputPath}\"";
 
         var startInfo = new ProcessStartInfo
         {
@@ -176,10 +187,20 @@ public static partial class AudioPreprocessor
         
         process.Start();
         process.BeginErrorReadLine();
-        
-        // Drain stdout to prevent buffer deadlock
-        await process.StandardOutput.ReadToEndAsync();
-        await process.WaitForExitAsync();
+
+        try
+        {
+            await process.StandardOutput.ReadToEndAsync(cancellationToken);
+            await process.WaitForExitAsync(cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+            }
+            throw;
+        }
 
         if (process.ExitCode != 0)
         {
@@ -190,24 +211,17 @@ public static partial class AudioPreprocessor
         return outputPath;
     }
 
-    private static string BuildFfmpegArguments(string inputPath, string outputPath, FfmpegHardwareAccel hwAccel)
+    private static string BuildFfmpegArguments(string inputPath, string outputPath)
     {
-        // Advanced filter chain for speech enhancement:
+        // Audio filter chain for speech enhancement:
         // - highpass=f=200: Remove sub-vocal rumble and DC offset
         // - lowpass=f=3500: Eliminate ultrasonic noise and aliasing
         // - afftdn=nr=0.21:nf=-25: FFT-based denoising with spectral gating
         // - loudnorm=I=-16:tp=-1.5: EBU R128 loudness normalization
+        // Note: GPU acceleration doesn't help here - FFmpeg's audio filters are CPU-only,
+        // and -vn skips video decoding entirely so hwaccel flags have no effect.
         var filterChain = "highpass=f=200,lowpass=f=3500,afftdn=nr=0.21:nf=-25,loudnorm=I=-16:tp=-1.5";
-        
-        var hwAccelInput = hwAccel switch
-        {
-            FfmpegHardwareAccel.Cuda => "-hwaccel cuda -hwaccel_output_format cuda ",
-            FfmpegHardwareAccel.Qsv => "-hwaccel qsv -hwaccel_output_format qsv ",
-            FfmpegHardwareAccel.Amf => "-hwaccel d3d11va ",
-            FfmpegHardwareAccel.VideoToolbox => "-hwaccel videotoolbox ",
-            _ => ""
-        };
 
-        return $"-y {hwAccelInput}-i \"{inputPath}\" -af \"{filterChain}\" -ar 16000 -ac 1 -c:a pcm_s16le \"{outputPath}\"";
+        return $"-y -vn -i \"{inputPath}\" -af \"{filterChain}\" -ar 16000 -ac 1 -c:a pcm_s16le \"{outputPath}\"";
     }
 }

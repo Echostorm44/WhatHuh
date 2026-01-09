@@ -10,8 +10,17 @@ namespace WhatHuh.Cli;
 
 public class Program
 {
+    private static CancellationTokenSource? Cts;
+
     public static async Task<int> Main(string[] args)
     {
+        Console.CancelKeyPress += (sender, e) =>
+        {
+            e.Cancel = true;
+            Cts?.Cancel();
+            AnsiConsole.MarkupLine("\n[yellow]Cancellation requested, cleaning up...[/]");
+        };
+
         var inputArg = new Argument<string>("input", 
             "Input video file, directory, or glob pattern (e.g., *.mp4)");
         var outputOption = new Option<string?>([ "--output", "-o" ], 
@@ -213,6 +222,11 @@ public class Program
     settingsTable.AddRow("Files", files.Count.ToString());
     AnsiConsole.Write(settingsTable);
     AnsiConsole.WriteLine();
+    AnsiConsole.MarkupLine("[grey]Press Ctrl+C to cancel[/]");
+    AnsiConsole.WriteLine();
+
+    Cts = new CancellationTokenSource();
+    var cancellationToken = Cts.Token;
 
     try
     {
@@ -224,7 +238,7 @@ public class Program
             .StartAsync("Initializing pipeline...", async ctx =>
             {
                 var status = new Progress<string>(msg => ctx.Status(msg));
-                await pipeline.InitializeAsync(status);
+                await pipeline.InitializeAsync(status, cancellationToken);
             });
 
         AnsiConsole.MarkupLine("[green]✓[/] Pipeline initialized");
@@ -233,6 +247,8 @@ public class Program
 
         foreach (var file in files)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            
             var outputPath = output ?? Path.ChangeExtension(file, ".srt");
             var fileName = Path.GetFileName(file);
             var shortName = fileName.Length > 50 ? $"{fileName[..47]}..." 
@@ -264,7 +280,7 @@ public class Program
                     });
 
                     await pipeline.ProcessVideoAsync(file, outputPath, 
-                        statusProgress, progress);
+                        statusProgress, progress, cancellationToken);
                     task.Value = 1;
                     task.Description = "[green]Complete[/]";
                 });
@@ -275,6 +291,11 @@ public class Program
         }
 
         AnsiConsole.Write(new Rule("[green]All files processed successfully![/]").RuleStyle("green"));
+        }
+        catch (OperationCanceledException)
+        {
+            AnsiConsole.WriteLine();
+            AnsiConsole.Write(new Rule("[yellow]Operation cancelled[/]").RuleStyle("yellow"));
         }
         catch (Exception ex)
         {
@@ -364,16 +385,24 @@ public class Program
                     {
                         var task = ctx.AddTask($"[cyan]Downloading " +
                             $"{modelOpt.DisplayName}[/]");
-                        task.IsIndeterminate = true;
-                        var progress = new Progress<double>(bytes =>
+                        var expectedMb = modelOpt.ExpectedSizeBytes / 1024.0 / 1024.0;
+                        task.MaxValue = expectedMb > 0 ? expectedMb : 100;
+                        task.IsIndeterminate = expectedMb <= 0;
+                        
+                        var progress = new Progress<(long Downloaded, long Total)>(p =>
                         {
                             task.IsIndeterminate = false;
-                            task.Value = bytes / 1024 / 1024;
-                            task.MaxValue = task.Value + 1;
+                            var downloadedMb = p.Downloaded / 1024.0 / 1024.0;
+                            task.Value = downloadedMb;
+                            if (p.Total > 0)
+                            {
+                                task.MaxValue = p.Total / 1024.0 / 1024.0;
+                            }
                         });
                         var success = await DependencyChecker
                             .DownloadWhisperModelAsync(appPath, 
-                                modelOpt.EnumType, modelOpt.FileName, progress);
+                                modelOpt.EnumType, modelOpt.FileName, 
+                                modelOpt.ExpectedSizeBytes, progress);
                         if (!success)
                         {
                             AnsiConsole.MarkupLine($"[red]✗[/] Failed to download {modelOpt.DisplayName}");

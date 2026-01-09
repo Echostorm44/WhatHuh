@@ -14,6 +14,7 @@ public partial class MainWindow : Window
     public List<WhisperModelOption> ModelOptions { get; set; }
     public WhisperModelOption SelectedModel { get; set; }
     public string AppRootPath { get; set; }
+    private CancellationTokenSource? Cts;
 
     public MainWindow()
     {
@@ -25,6 +26,7 @@ public partial class MainWindow : Window
 
         InitializeControls();
         SetupDragDrop();
+        SetupKeyboardShortcuts();
     }
 
     private void InitializeControls()
@@ -45,6 +47,18 @@ public partial class MainWindow : Window
     {
         FileQueueListBox.AddHandler(DragDrop.DropEvent, OnDrop);
         FileQueueListBox.AddHandler(DragDrop.DragOverEvent, OnDragOver);
+    }
+
+    private void SetupKeyboardShortcuts()
+    {
+        FileQueueListBox.KeyDown += (sender, e) =>
+        {
+            if (e.Key == Key.Delete && FileQueueListBox.SelectedItem is string selectedFile)
+            {
+                FilesToConvert.Remove(selectedFile);
+                e.Handled = true;
+            }
+        };
     }
 
     private void OnDragOver(object? sender, DragEventArgs e)
@@ -159,7 +173,10 @@ public partial class MainWindow : Window
         }
 
         SetControlsEnabled(false);
+        CancelButton.IsVisible = true;
         ResultsTextBox.Text = "";
+        Cts = new CancellationTokenSource();
+        var cancellationToken = Cts.Token;
 
         try
         {
@@ -184,19 +201,29 @@ public partial class MainWindow : Window
                 SelectedModel.FileName))
             {
                 StatusText.Text = $"Downloading {SelectedModel.DisplayName} model...";
-                ProgressBar.IsIndeterminate = true;
+                ProgressBar.IsIndeterminate = false;
+                ProgressBar.Maximum = 1;
 
-                var downloadProgress = new Progress<double>(bytes =>
+                var downloadProgress = new Progress<(long Downloaded, long Total)>(p =>
                 {
-                    var mb = bytes / 1024 / 1024;
-                    StatusText.Text = $"Downloading {SelectedModel.DisplayName}: {mb:F1} MB";
+                    var downloadedMb = p.Downloaded / 1024.0 / 1024.0;
+                    var totalMb = p.Total / 1024.0 / 1024.0;
+                    if (p.Total > 0)
+                    {
+                        ProgressBar.Value = (double)p.Downloaded / p.Total;
+                        StatusText.Text = $"Downloading {SelectedModel.DisplayName}: {downloadedMb:F1} / {totalMb:F0} MB";
+                    }
+                    else
+                    {
+                        StatusText.Text = $"Downloading {SelectedModel.DisplayName}: {downloadedMb:F1} MB";
+                    }
                 });
 
                 var success = await DependencyChecker.DownloadWhisperModelAsync(
-                    AppRootPath, SelectedModel.EnumType, SelectedModel
-                    .FileName, downloadProgress);
+                    AppRootPath, SelectedModel.EnumType, SelectedModel.FileName, 
+                    SelectedModel.ExpectedSizeBytes, downloadProgress);
 
-                ProgressBar.IsIndeterminate = false;
+                ProgressBar.Value = 0;
 
                 if (!success)
                 {
@@ -223,6 +250,38 @@ public partial class MainWindow : Window
                 }
             }
 
+            // Auto-pull LLM model if needed
+            if (options.UseLlmRefinement)
+            {
+                if (!await LlmRefinementService.IsAvailableAsync())
+                {
+                    StatusText.Text = "Ollama is not running. Please start Ollama first.";
+                    return;
+                }
+
+                if (!await LlmRefinementService.IsModelAvailableAsync(options.LlmModel))
+                {
+                    StatusText.Text = $"Pulling {options.LlmModel} model...";
+                    ProgressBar.IsIndeterminate = true;
+
+                    var pullStatus = new Progress<string>(msg =>
+                    {
+                        StatusText.Text = $"Pulling {options.LlmModel}: {msg}";
+                    });
+
+                    var success = await LlmRefinementService.PullModelAsync(
+                        options.LlmModel, pullStatus, cancellationToken);
+
+                    ProgressBar.IsIndeterminate = false;
+
+                    if (!success)
+                    {
+                        StatusText.Text = $"Failed to pull {options.LlmModel} model";
+                        return;
+                    }
+                }
+            }
+
         using var pipeline = new TranscriptionPipeline(options);
 
             var statusProgress = new Progress<string>(msg =>
@@ -237,7 +296,7 @@ public partial class MainWindow : Window
 
             await Task.Run(async () =>
             {
-                await pipeline.InitializeAsync(statusProgress);
+                await pipeline.InitializeAsync(statusProgress, cancellationToken);
             });
 
             var filesToProcess = FilesToConvert.ToList();
@@ -245,6 +304,8 @@ public partial class MainWindow : Window
 
             for (int i = 0; i < filesToProcess.Count; i++)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+                
                 var videoPath = filesToProcess[i];
                 var videoDir = Path.GetDirectoryName(videoPath)!;
                 var videoName = Path.GetFileNameWithoutExtension(videoPath);
@@ -257,7 +318,7 @@ public partial class MainWindow : Window
 
                 await Task.Run(async () =>
                 {
-                    await pipeline.ProcessVideoAsync(videoPath, srtPath, fileStatusProgress, progressBar);
+                    await pipeline.ProcessVideoAsync(videoPath, srtPath, fileStatusProgress, progressBar, cancellationToken);
                 });
 
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
@@ -269,6 +330,11 @@ public partial class MainWindow : Window
 
             StatusText.Text = "Done!";
         }
+        catch (OperationCanceledException)
+        {
+            StatusText.Text = "Cancelled";
+            ResultsTextBox.Text += "\n⚠ Operation cancelled by user\n";
+        }
         catch (Exception ex)
         {
             StatusText.Text = $"Error: {ex.Message}";
@@ -277,9 +343,18 @@ public partial class MainWindow : Window
         finally
         {
             SetControlsEnabled(true);
+            CancelButton.IsVisible = false;
             ProgressBar.Value = 0;
             ProgressBar.IsIndeterminate = false;
+            Cts?.Dispose();
+            Cts = null;
         }
+    }
+
+    private void Cancel_Click(object? sender, RoutedEventArgs e)
+    {
+        Cts?.Cancel();
+        StatusText.Text = "Cancelling...";
     }
 
     private void SetControlsEnabled(bool enabled)

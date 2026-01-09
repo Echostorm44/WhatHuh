@@ -22,7 +22,7 @@ public class TranscriptionPipeline : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    public async Task InitializeAsync(IProgress<string>? status = null)
+    public async Task InitializeAsync(IProgress<string>? status = null, CancellationToken cancellationToken = default)
     {
         status?.Report("Checking dependencies...");
 
@@ -40,7 +40,8 @@ public class TranscriptionPipeline : IDisposable
             var success = await DependencyChecker.DownloadWhisperModelAsync(
                 Options.AppPath, 
                 Options.Model.EnumType, 
-                Options.Model.FileName);
+                Options.Model.FileName,
+                Options.Model.ExpectedSizeBytes);
 
             if (!success)
             {
@@ -48,6 +49,8 @@ public class TranscriptionPipeline : IDisposable
                     $"Failed to download Whisper model: {Options.Model.DisplayName}");
             }
         }
+
+        cancellationToken.ThrowIfCancellationRequested();
 
         status?.Report("Loading Whisper model...");
         WhisperService = new WhisperTranscriptionService(whisperModelPath, 
@@ -70,6 +73,8 @@ public class TranscriptionPipeline : IDisposable
                 }
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             status?.Report("Loading VAD model...");
             VadDetector = new SileroVadDetector(vadModelPath);
         }
@@ -91,7 +96,8 @@ public class TranscriptionPipeline : IDisposable
         string videoPath,
         string outputSrtPath,
         IProgress<string>? status = null,
-        IProgress<double>? progress = null)
+        IProgress<double>? progress = null,
+        CancellationToken cancellationToken = default)
     {
         if (WhisperService == null)
         {
@@ -108,7 +114,7 @@ public class TranscriptionPipeline : IDisposable
             status?.Report($"Extracting audio: {fileName}");
             progress?.Report(0);
             await AudioPreprocessor.ExtractAndPreprocessAudioAsync(videoPath, 
-                tempWavPath, null, progress);
+                tempWavPath, null, progress, cancellationToken);
 
             List<SpeechSegment>? speechSegments = null;
             if (Options.UseVad && VadDetector != null)
@@ -116,7 +122,7 @@ public class TranscriptionPipeline : IDisposable
                 status?.Report("Detecting speech segments...");
                 progress?.Report(0);
                 speechSegments = VadDetector.GetSpeechSegments(tempWavPath, 
-                    progress);
+                    progress, cancellationToken);
                 status?.Report($"Found {speechSegments.Count} speech segments");
             }
 
@@ -127,7 +133,7 @@ public class TranscriptionPipeline : IDisposable
             if (speechSegments != null && speechSegments.Count > 0)
             {
                 await foreach (var result in WhisperService.TranscribeWithVadAsync(
-                    tempWavPath, speechSegments, progress))
+                    tempWavPath, speechSegments, progress, cancellationToken))
                 {
                     results.Add(result);
                 }
@@ -136,7 +142,7 @@ public class TranscriptionPipeline : IDisposable
             {
                 await using var wavStream = File.OpenRead(tempWavPath);
                 await foreach (var result in WhisperService.TranscribeAsync(
-                    wavStream, progress))
+                    wavStream, progress, cancellationToken))
                 {
                     results.Add(result);
                 }
@@ -147,7 +153,7 @@ public class TranscriptionPipeline : IDisposable
             {
                 status?.Report("Refining with LLM...");
                 progress?.Report(0);
-                results = await LlmService.RefineBatchAsync(results, 10, progress);
+                results = await LlmService.RefineBatchAsync(results, 10, progress, cancellationToken);
             }
 
             status?.Report("Writing subtitle file...");
@@ -169,12 +175,15 @@ public class TranscriptionPipeline : IDisposable
     public async Task ProcessBatchAsync(
         IEnumerable<string> videoPaths,
         IProgress<string>? status = null,
-        IProgress<double>? progress = null)
+        IProgress<double>? progress = null,
+        CancellationToken cancellationToken = default)
     {
         var videos = videoPaths.ToList();
 
         for (int i = 0;i < videos.Count;i++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            
             var videoPath = videos[i];
             var videoDir = Path.GetDirectoryName(videoPath)!;
             var videoName = Path.GetFileNameWithoutExtension(videoPath);
@@ -185,7 +194,7 @@ public class TranscriptionPipeline : IDisposable
                 status?.Report($"[{i + 1}/{videos.Count}] {msg}");
             });
 
-            await ProcessVideoAsync(videoPath, srtPath, batchStatus, progress);
+            await ProcessVideoAsync(videoPath, srtPath, batchStatus, progress, cancellationToken);
         }
     }
 }
