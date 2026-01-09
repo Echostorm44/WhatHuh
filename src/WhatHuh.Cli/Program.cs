@@ -230,6 +230,55 @@ public class Program
 
     try
     {
+        // Check if we need to download the Whisper model first
+        var whisperModelPath = DependencyChecker.GetWhisperModelPath(
+            options.AppPath, options.Model.FileName);
+        
+        if (!File.Exists(whisperModelPath))
+        {
+            await AnsiConsole.Progress()
+                .AutoClear(false)
+                .Columns(
+                    new TaskDescriptionColumn(),
+                    new ProgressBarColumn(),
+                    new PercentageColumn(),
+                    new SpinnerColumn())
+                .StartAsync(async ctx =>
+                {
+                    var task = ctx.AddTask($"[cyan]Downloading {options.Model.DisplayName}[/]");
+                    var expectedBytes = options.Model.ExpectedSizeBytes;
+                    task.MaxValue = expectedBytes > 0 ? expectedBytes : 100;
+                    task.IsIndeterminate = expectedBytes <= 0;
+                    
+                    var progress = new Progress<(long Downloaded, long Total)>(p =>
+                    {
+                        task.IsIndeterminate = false;
+                        task.Value = p.Downloaded;
+                        if (p.Total > 0)
+                        {
+                            task.MaxValue = p.Total;
+                        }
+                    });
+                    
+                    var success = await DependencyChecker.DownloadWhisperModelAsync(
+                        options.AppPath, 
+                        options.Model.EnumType, 
+                        options.Model.FileName,
+                        options.Model.ExpectedSizeBytes, 
+                        progress);
+                    
+                    if (!success)
+                    {
+                        throw new InvalidOperationException(
+                            $"Failed to download Whisper model: {options.Model.DisplayName}");
+                    }
+                    
+                    task.Value = task.MaxValue;
+                });
+            
+            AnsiConsole.MarkupLine($"[green]✓[/] Downloaded {options.Model.DisplayName}");
+        }
+
         using var pipeline = new TranscriptionPipeline(options);
 
         await AnsiConsole.Status()
@@ -378,25 +427,23 @@ public class Program
                     .Columns(
                         new TaskDescriptionColumn(),
                         new ProgressBarColumn(),
-                        new DownloadedColumn(),
-                        new TransferSpeedColumn(),
+                        new PercentageColumn(),
                         new SpinnerColumn())
                     .StartAsync(async ctx =>
                     {
                         var task = ctx.AddTask($"[cyan]Downloading " +
                             $"{modelOpt.DisplayName}[/]");
-                        var expectedMb = modelOpt.ExpectedSizeBytes / 1024.0 / 1024.0;
-                        task.MaxValue = expectedMb > 0 ? expectedMb : 100;
-                        task.IsIndeterminate = expectedMb <= 0;
+                        var expectedBytes = modelOpt.ExpectedSizeBytes;
+                        task.MaxValue = expectedBytes > 0 ? expectedBytes : 100;
+                        task.IsIndeterminate = expectedBytes <= 0;
                         
                         var progress = new Progress<(long Downloaded, long Total)>(p =>
                         {
                             task.IsIndeterminate = false;
-                            var downloadedMb = p.Downloaded / 1024.0 / 1024.0;
-                            task.Value = downloadedMb;
+                            task.Value = p.Downloaded;
                             if (p.Total > 0)
                             {
-                                task.MaxValue = p.Total / 1024.0 / 1024.0;
+                                task.MaxValue = p.Total;
                             }
                         });
                         var success = await DependencyChecker

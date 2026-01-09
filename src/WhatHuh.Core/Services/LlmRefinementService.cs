@@ -57,7 +57,7 @@ public class LlmRefinementService
         for (int i = 0;i < segments.Count;i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            
+
             var segment = segments[i];
             var refinedText = await RefineTranscriptAsync(segment.Text, cancellationToken);
 
@@ -88,7 +88,7 @@ public class LlmRefinementService
         foreach (var batch in batches)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            
+
             var combinedText = string.Join("\n", batch.Select(s => 
                 $"[{s.Sequence}] {s.Text}"));
             var prompt = BuildBatchRefinementPrompt(combinedText);
@@ -136,7 +136,7 @@ public class LlmRefinementService
             
             Rules:
             1. Fix spelling errors and grammar mistakes
-            2. Remove disfluencies like "um", "uh", "you know", "like" (when used as filler)
+            2. Keep the [number] prefix for each line
             3. Fix capitalization, especially for proper nouns and acronyms
             4. Preserve the original phrasing as much as possible
             5. Only return the corrected text, nothing else
@@ -156,7 +156,6 @@ public class LlmRefinementService
             
             Rules:
             1. Fix spelling errors and grammar mistakes
-            2. Remove disfluencies like "um", "uh", "you know", "like" (when used as filler)
             3. Fix capitalization, especially for proper nouns and acronyms
             4. Preserve the original phrasing
             5. Keep the [number] prefix for each line
@@ -258,70 +257,70 @@ public class LlmRefinementService
 
     public static async Task<bool> PullModelAsync(string modelName, IProgress<string>? status = null, CancellationToken cancellationToken = default)
     {
-        try
+        using var client = new HttpClient { Timeout = TimeSpan.FromMinutes(60) };
+
+        var request = new OllamaPullRequest { Name = modelName, Stream = true };
+        var json = JsonSerializer.Serialize(request, OllamaJsonContext.Default.OllamaPullRequest);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        var requestMessage = new HttpRequestMessage(HttpMethod.Post, $"{OllamaBaseUrl}/api/pull")
         {
-            using var client = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
-            
-            var request = new { name = modelName, stream = true };
-            var json = JsonSerializer.Serialize(request);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-            
-            var requestMessage = new HttpRequestMessage(HttpMethod.Post, $"{OllamaBaseUrl}/api/pull")
+            Content = content
+        };
+
+        status?.Report("Connecting to Ollama...");
+
+        using var response = await client.SendAsync(requestMessage, 
+            HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            throw new InvalidOperationException($"Failed to pull model {modelName}: {response.StatusCode} - {errorContent}");
+        }
+
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var reader = new StreamReader(stream);
+
+        string? line;
+        while ((line = await reader.ReadLineAsync(cancellationToken)) != null)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (string.IsNullOrEmpty(line))
             {
-                Content = content
-            };
-            
-            using var response = await client.SendAsync(requestMessage, 
-                HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-            
-            if (!response.IsSuccessStatusCode)
-            {
-                return false;
+                continue;
             }
 
-            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-            using var reader = new StreamReader(stream);
-            
-            string? line;
-            while ((line = await reader.ReadLineAsync(cancellationToken)) != null)
+            // Check for error in response
+            if (line.Contains("\"error\""))
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                
-                if (string.IsNullOrEmpty(line)) continue;
-                
-                // Parse status from JSON response
-                var statusIndex = line.IndexOf("\"status\":\"", StringComparison.Ordinal);
-                if (statusIndex != -1)
+                throw new InvalidOperationException($"Ollama error while pulling {modelName}: {line}");
+            }
+
+            // Parse status from JSON response
+            var statusIndex = line.IndexOf("\"status\":\"", StringComparison.Ordinal);
+            if (statusIndex != -1)
+            {
+                statusIndex += 10;
+                var endIndex = line.IndexOf("\"", statusIndex, StringComparison.Ordinal);
+                if (endIndex != -1)
                 {
-                    statusIndex += 10;
-                    var endIndex = line.IndexOf("\"", statusIndex, StringComparison.Ordinal);
-                    if (endIndex != -1)
-                    {
-                        var pullStatus = line[statusIndex..endIndex];
-                        status?.Report(pullStatus);
-                    }
+                    var pullStatus = line[statusIndex..endIndex];
+                    status?.Report(pullStatus);
                 }
             }
+        }
 
-            return true;
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch
-        {
-            return false;
-        }
+        return true;
     }
 
     public static async Task<bool> IsModelAvailableAsync(string modelName)
     {
         var models = await GetAvailableModelsAsync();
         return models.Any(m => m.Equals(modelName, StringComparison.OrdinalIgnoreCase) ||
-                               m.StartsWith(modelName + ":", StringComparison.OrdinalIgnoreCase));
+                               m.StartsWith($"{modelName}:", StringComparison.OrdinalIgnoreCase));
     }
-
 }
 
 internal class OllamaResponse
@@ -350,9 +349,18 @@ internal class OllamaOptions
     public double TopP { get; set; }
 }
 
+internal class OllamaPullRequest
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+    [JsonPropertyName("stream")]
+    public bool Stream { get; set; }
+}
+
 [JsonSerializable(typeof(OllamaRequest))]
 [JsonSerializable(typeof(OllamaResponse))]
 [JsonSerializable(typeof(OllamaOptions))]
+[JsonSerializable(typeof(OllamaPullRequest))]
 internal partial class OllamaJsonContext : JsonSerializerContext
 {
 }

@@ -184,7 +184,7 @@ public partial class MainWindow : Window
             var language = languageItem?.Tag?.ToString() ?? "auto";
 
             var llmModelItem = LlmModelComboBox.SelectedItem as ComboBoxItem;
-            var llmModel = llmModelItem?.Content?.ToString() ?? "phi3:mini";
+            var llmModel = llmModelItem?.Content?.ToString() ?? "phi3:latest";
 
             var options = new TranscriptionPipelineOptions
             {
@@ -250,54 +250,30 @@ public partial class MainWindow : Window
                 }
             }
 
-            // Auto-pull LLM model if needed
-            if (options.UseLlmRefinement)
-            {
-                if (!await LlmRefinementService.IsAvailableAsync())
-                {
-                    StatusText.Text = "Ollama is not running. Please start Ollama first.";
-                    return;
-                }
-
-                if (!await LlmRefinementService.IsModelAvailableAsync(options.LlmModel))
-                {
-                    StatusText.Text = $"Pulling {options.LlmModel} model...";
-                    ProgressBar.IsIndeterminate = true;
-
-                    var pullStatus = new Progress<string>(msg =>
-                    {
-                        StatusText.Text = $"Pulling {options.LlmModel}: {msg}";
-                    });
-
-                    var success = await LlmRefinementService.PullModelAsync(
-                        options.LlmModel, pullStatus, cancellationToken);
-
-                    ProgressBar.IsIndeterminate = false;
-
-                    if (!success)
-                    {
-                        StatusText.Text = $"Failed to pull {options.LlmModel} model";
-                        return;
-                    }
-                }
-            }
-
         using var pipeline = new TranscriptionPipeline(options);
 
             var statusProgress = new Progress<string>(msg =>
             {
-                StatusText.Text = msg;
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    StatusText.Text = msg;
+                });
             });
 
             var progressBar = new Progress<double>(p =>
             {
-                ProgressBar.Value = p;
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    ProgressBar.Value = p;
+                });
             });
 
+            ProgressBar.IsIndeterminate = true;
             await Task.Run(async () =>
             {
                 await pipeline.InitializeAsync(statusProgress, cancellationToken);
             });
+            ProgressBar.IsIndeterminate = false;
 
             var filesToProcess = FilesToConvert.ToList();
             var totalFiles = filesToProcess.Count;

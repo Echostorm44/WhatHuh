@@ -179,9 +179,10 @@
                               Padding="12,8"
                               FontSize="14"
                               ToolTip.Tip="Select which Ollama model to use for transcript refinement">
-                        <ComboBoxItem Content="phi3:mini"/>
-                        <ComboBoxItem Content="llama3.2"/>
-                        <ComboBoxItem Content="mistral"/>
+                        <ComboBoxItem Content="phi3:latest"/>
+                        <ComboBoxItem Content="llama3.2:latest"/>
+                        <ComboBoxItem Content="mistral:latest"/>
+                        <ComboBoxItem Content="qwen3:latest"/>
                     </ComboBox>
                 </StackPanel>
             </Border>

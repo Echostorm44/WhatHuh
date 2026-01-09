@@ -86,6 +86,15 @@ public class TranscriptionPipeline : IDisposable
                 throw new InvalidOperationException(
                     "Ollama is not running. Please start Ollama to use LLM refinement.");
             }
+
+            // Check if model exists, if not, pull it
+            if (!await LlmRefinementService.IsModelAvailableAsync(Options.LlmModel))
+            {
+                status?.Report($"Pulling LLM model: {Options.LlmModel}...");
+                var pullProgress = new Progress<string>(msg => status?.Report($"Pulling {Options.LlmModel}: {msg}"));
+                await LlmRefinementService.PullModelAsync(Options.LlmModel, pullProgress, cancellationToken);
+            }
+
             LlmService = new LlmRefinementService(Options.LlmModel);
         }
 

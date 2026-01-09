@@ -47,7 +47,14 @@ public static class SrtWriter
 
     private static string WrapText(string text, int maxLineLength)
     {
-        if (string.IsNullOrEmpty(text) || text.Length <= maxLineLength)
+        if (string.IsNullOrEmpty(text))
+            return text;
+
+        // Trim leading dashes, spaces, and common transcription artifacts
+        text = text.TrimStart('-', ' ', '–', '—');
+        text = text.Trim();
+
+        if (text.Length <= maxLineLength)
             return text;
 
         var result = new StringBuilder();
