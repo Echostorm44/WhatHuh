@@ -1,5 +1,8 @@
 name: Build and Release
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
   push:
@@ -37,8 +40,8 @@ jobs:
       run: |
         git config user.name "github-actions"
         git config user.email "github-actions@github.com"
-        git tag -f latest
-        git push -f origin latest
+        git tag -f latest || true
+        git push -f origin latest || true
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
