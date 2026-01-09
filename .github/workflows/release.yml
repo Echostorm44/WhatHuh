@@ -1,9 +1,10 @@
 name: Build and Release
 
 on:
+  workflow_dispatch:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
 
 jobs:
   build-windows:
@@ -15,8 +16,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '10.0.x'
-        dotnet-quality: 'preview'
+        dotnet-version: '10.0.1xx'
     
     - name: Restore dependencies
       run: dotnet restore
@@ -32,10 +32,19 @@ jobs:
     
     - name: Create GUI archive
       run: Compress-Archive -Path publish/gui/* -DestinationPath WhatHuh-GUI-win-x64.zip
-    
+
+    - name: Create version tag
+      run: |
+        git config user.name "github-actions"
+        git config user.email "github-actions@github.com"
+        git tag -f latest
+        git push -f origin latest
+
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
+        tag_name: latest
+        name: Latest Build
         files: |
           WhatHuh-CLI-win-x64.zip
           WhatHuh-GUI-win-x64.zip
