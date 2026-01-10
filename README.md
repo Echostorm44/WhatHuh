@@ -75,6 +75,9 @@ whathuh -t "C:\Videos" -m medium
 # Transcribe MKV files with LLM refinement
 whathuh -t *.mkv -r
 
+# Transcribe entire folder, use large-v3 model, English language, and LLM refinement with llama3.2
+whathuh -t F:\Temp\ -m large-v3 -l en -r --llm-model llama3.2:latest
+
 # Setup all dependencies
 whathuh -s -a
 
