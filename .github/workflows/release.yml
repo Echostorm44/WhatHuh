@@ -1,25 +1,51 @@
 name: Build and Release
-
 permissions:
   contents: write
-
 on:
   workflow_dispatch:
   push:
     branches:
       - main
-
 jobs:
   build-windows:
     runs-on: windows-latest
     
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Need full history for version calculation
     
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '10.0.1xx'
+    
+    - name: Determine version
+      id: version
+      shell: pwsh
+      run: |
+        # Check if version.txt exists, if not create it with 2.0.0
+        if (-not (Test-Path "version.txt")) {
+          "2.0.0" | Out-File -FilePath "version.txt" -NoNewline -Encoding utf8
+        }
+        
+        # Read the base version from version.txt (e.g., "2.0" or "2.1")
+        $baseVersion = Get-Content "version.txt" -Raw
+        $baseVersion = $baseVersion.Trim()
+        
+        # Parse major.minor from the base version
+        $versionParts = $baseVersion -split '\.'
+        $major = $versionParts[0]
+        $minor = $versionParts[1]
+        
+        # Count existing tags that match this major.minor to determine patch version
+        $existingTags = git tag -l "v$major.$minor.*" | Measure-Object | Select-Object -ExpandProperty Count
+        $patch = $existingTags
+        
+        $fullVersion = "$major.$minor.$patch"
+        echo "version=$fullVersion" >> $env:GITHUB_OUTPUT
+        echo "tag=v$fullVersion" >> $env:GITHUB_OUTPUT
+        echo "Generated version: $fullVersion"
     
     - name: Restore dependencies
       run: dotnet restore
@@ -35,19 +61,19 @@ jobs:
     
     - name: Create GUI archive
       run: Compress-Archive -Path publish/gui/* -DestinationPath WhatHuh-GUI-win-x64.zip
-
+    
     - name: Create version tag
       run: |
         git config user.name "github-actions"
         git config user.email "github-actions@github.com"
-        git tag -f latest || true
-        git push -f origin latest || true
-
+        git tag ${{ steps.version.outputs.tag }}
+        git push origin ${{ steps.version.outputs.tag }}
+    
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: latest
-        name: Latest Build
+        tag_name: ${{ steps.version.outputs.tag }}
+        name: Release ${{ steps.version.outputs.version }}
         files: |
           WhatHuh-CLI-win-x64.zip
           WhatHuh-GUI-win-x64.zip
