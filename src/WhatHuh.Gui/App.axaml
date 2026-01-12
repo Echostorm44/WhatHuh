@@ -8,6 +8,7 @@
 
     <Application.Styles>
         <FluentTheme />
+        <StyleInclude Source="avares://WhatHuh.Gui/Styles/SharedStyles.axaml"/>
         <Style Selector="Window">
             <Setter Property="FontFamily" Value="{StaticResource InterFont}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>        

@@ -6,135 +6,12 @@
         x:Class="WhatHuh.Gui.MainWindow"
         Title="What? Huh? Subtitler"  
         RenderOptions.TextRenderingMode="SubpixelAntialias"
-        RenderOptions.BitmapInterpolationMode="HighQuality"
-        
+        RenderOptions.BitmapInterpolationMode="HighQuality"        
         Width="1000" Height="720" 
         MinWidth="800" MinHeight="700"
         BorderBrush="{StaticResource SubtleBorder}" BorderThickness="2"
         WindowStartupLocation="CenterScreen" CornerRadius="28"       
         Background="{StaticResource WindowBackground}">
-    <Window.Resources>
-        <SolidColorBrush x:Key="WindowBackground" Color="#1C1C1E"/>
-        <SolidColorBrush x:Key="ControlBackground" Color="#2C2C2E"/>
-        <SolidColorBrush x:Key="SubtleBorder" Color="#3A3A3C"/>
-        <SolidColorBrush x:Key="AccentBlue" Color="#0A84FF"/>
-        <SolidColorBrush x:Key="SecondaryText" Color="#8E8E93"/>
-    </Window.Resources>
-    <Window.Styles>
-        <Style Selector="Button">
-            <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="Padding" Value="16,8"/>
-            <Setter Property="Background" Value="{StaticResource ControlBackground}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource SubtleBorder}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Transitions">
-                <Transitions>
-                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1"/>
-                </Transitions>
-            </Setter>
-        </Style>
-        <Style Selector="Button:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="#3A3A3C"/>
-            <Setter Property="RenderTransform" Value="scale(1.01)"/>
-        </Style>
-
-        <Style Selector="Button.PrimaryAction">
-            <Setter Property="Background" Value="{StaticResource AccentBlue}"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-        </Style>
-        <Style Selector="Button:pointerover">
-            <Setter Property="RenderTransform" Value="scale(1.02)"/>
-        </Style>
-        <Style Selector="TextBlock">
-            <Setter Property="FontWeight" Value="DemiBold"/>
-            <Setter Property="Foreground" Value="White"/>
-        </Style>
-        <Style Selector="TextBlock.SectionLabel">
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="FontWeight" Value="DemiBold"/>            
-            <Setter Property="Foreground" Value="{StaticResource SecondaryText}"/>
-            <Setter Property="Margin" Value="0,0,0,8"/>
-        </Style>   
-        <Style Selector="TextBox#ResultsTextBox">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="FocusAdorner" Value="{x:Null}"/>
-        </Style>
-
-        <Style Selector="TextBox#ResultsTextBox:pointerover /template/ Border#PART_BorderElement">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderBrush" Value="Transparent"/>
-        </Style>
-
-        <Style Selector="TextBox#ResultsTextBox:focus /template/ Border#PART_BorderElement">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderBrush" Value="{StaticResource AccentBlue}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-        </Style>
-
-        <Style Selector="ListBox">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Padding" Value="4"/>
-        </Style>
-
-        <Style Selector="ListBoxItem">
-            <Setter Property="Padding" Value="12,8"/>
-            <Setter Property="Margin" Value="2,1"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Background" Value="Transparent"/>
-        </Style>
-
-        <Style Selector="ComboBox">
-            <Setter Property="Background" Value="{StaticResource ControlBackground}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource SubtleBorder}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="8"/>
-    
-            <Style.Resources>
-                <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver">#353538</SolidColorBrush>
-                <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver">#454548</SolidColorBrush>
-                <SolidColorBrush x:Key="ComboBoxBackgroundPressed">#252528</SolidColorBrush>
-            </Style.Resources>
-        </Style>
-
-        <Style Selector="ComboBox /template/ PathIcon#DropDownGlyph">
-            <Setter Property="Width" Value="8"/>
-            <Setter Property="Foreground" Value="{StaticResource SecondaryText}"/>
-            <Setter Property="Opacity" Value="0.6"/>
-        </Style>
-
-        <Style Selector="ComboBox:pointerover /template/ PathIcon#DropDownGlyph">
-            <Setter Property="Opacity" Value="1"/>
-        </Style>
-
-        <Style Selector="ComboBox:pointerover /template/ Border#Layer1">
-            <Setter Property="Background" Value="#353538"/> 
-            <Setter Property="BorderBrush" Value="{StaticResource SubtleBorder}"/>
-        </Style>
-
-        <Style Selector="ComboBoxItem">
-            <Setter Property="Padding" Value="12,8"/>
-            <Setter Property="Margin" Value="2,1"/>
-            <Setter Property="CornerRadius" Value="6"/>
-        </Style>
-
-        <Style Selector="CheckBox">
-            <Setter Property="Padding" Value="10,0,0,0"/>
-            <Setter Property="Foreground" Value="White"/>
-        </Style>
-
-        <Style Selector="CheckBox /template/ Border#NormalRectangle">
-            <Setter Property="CornerRadius" Value="4"/>
-            <Setter Property="Width" Value="18"/>
-            <Setter Property="Height" Value="18"/>
-        </Style>
-
-        <Style Selector="CheckBox:pointerover /template/ Border#NormalRectangle">
-            <Setter Property="Background" Value="#3A3A3C"/>
-        </Style>
-   </Window.Styles>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <Grid Margin="32">
@@ -191,7 +68,8 @@
                     Margin="0,0,8,0">
                 <StackPanel>
                     <TextBlock Text="MODEL" 
-                               Classes="SectionLabel"/>
+                               Classes="SectionLabel"
+                               Margin="0,0,0,8"/>
                     <ComboBox x:Name="ModelComboBox" 
                               HorizontalAlignment="Stretch"
                               Padding="12,8"
@@ -220,22 +98,25 @@
                     Margin="8,0,0,0">
                 <StackPanel>
                     <TextBlock Text="OPTIONS" 
-                               Classes="SectionLabel"/>
+                               Classes="SectionLabel"
+                               Margin="0,0,0,8"/>
                     <CheckBox x:Name="UseVadCheckBox" 
                               Content="Use Voice Activity Detection" 
                               IsChecked="True" 
                               Margin="0,8"
+                              Padding="10,0,0,0"
                               Foreground="#FFFFFF"
                               FontSize="14"
                               ToolTip.Tip="Detects speech segments to improve accuracy and reduce hallucinations in silent parts"/>
                     <CheckBox x:Name="UseLlmCheckBox" 
                               Content="Use LLM Refinement (requires Ollama)" 
                               Margin="0,8"
+                              Padding="10,0,0,0"
                               Foreground="#FFFFFF"
                               FontSize="14"
                               ToolTip.Tip="Uses a local language model to fix grammar and spelling in transcriptions"/>
                     
-                    <TextBlock Text="LLM MODEL" Classes="SectionLabel"/>
+                    <TextBlock Text="LLM MODEL" Classes="SectionLabel" Margin="0,0,0,8"/>
                     <ComboBox x:Name="LlmModelComboBox" 
                               SelectedIndex="0" 
                               IsEnabled="False"
@@ -263,7 +144,7 @@
                     </Grid.ColumnDefinitions>
                     
                     <TextBlock Grid.Row="0" Grid.Column="0" 
-                               Text="FILE QUEUE" Classes="SectionLabel"/>
+                               Text="FILE QUEUE" Classes="SectionLabel" Margin="0,0,0,8"/>
                     <Button Grid.Row="0" Grid.Column="1" 
                             Content="Clear" 
                             Click="ClearQueue_Click" 
@@ -273,6 +154,7 @@
                              x:Name="FileQueueListBox"
                              MinHeight="100"
                              MaxHeight="100"
+                             Padding="4"
                              DragDrop.AllowDrop="True"/>
                 </Grid>
             </Grid>
@@ -280,7 +162,7 @@
             <!-- Results Area with Fixed Height -->
             <Grid Grid.Row="6" Grid.ColumnSpan="2">
                 <StackPanel>
-                    <TextBlock Text="RESULTS" Classes="SectionLabel"/>
+                    <TextBlock Text="RESULTS" Classes="SectionLabel" Margin="0,0,0,8"/>
                     <Border Background="#161617" 
                             CornerRadius="8" 
                             BorderBrush="{StaticResource SubtleBorder}" 

@@ -6,8 +6,13 @@
         x:Class="WhatHuh.Gui.AboutWindow"
         Title="About"
         Width="400" Height="320"
+        RenderOptions.TextRenderingMode="SubpixelAntialias"
+        RenderOptions.BitmapInterpolationMode="HighQuality"      
         CanResize="False"
-        WindowStartupLocation="CenterOwner">
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource WindowBackground}"
+        BorderBrush="{StaticResource SubtleBorder}" BorderThickness="1"
+        CornerRadius="12">
 
     <Grid Margin="24">
         <Grid.RowDefinitions>
@@ -24,6 +29,7 @@
         <TextBlock Grid.Row="1" 
                    Text="This is free software, as in speech. I hope you find it useful."
                    TextWrapping="Wrap" FontSize="14"
+                   Foreground="{StaticResource SecondaryText}"
                    Margin="0,0,0,16"/>
 
         <StackPanel Grid.Row="2" Spacing="8">
@@ -44,6 +50,7 @@
         <Button Grid.Row="3" Content="Close" 
                 HorizontalAlignment="Right"
                 Click="Close_Click"
-                Padding="24,8"/>
+                Padding="24,8"
+                Classes="PrimaryAction"/>
     </Grid>
 </Window>

@@ -1,0 +1,116 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Styles.Resources>
+        <SolidColorBrush x:Key="WindowBackground" Color="#1C1C1E"/>
+        <SolidColorBrush x:Key="ControlBackground" Color="#2C2C2E"/>
+        <SolidColorBrush x:Key="SubtleBorder" Color="#3A3A3C"/>
+        <SolidColorBrush x:Key="AccentBlue" Color="#0A84FF"/>
+        <SolidColorBrush x:Key="SecondaryText" Color="#8E8E93"/>
+    </Styles.Resources>
+
+    <Style Selector="Button">
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="Background" Value="{StaticResource ControlBackground}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource SubtleBorder}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1"/>
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="#3A3A3C"/>
+        <Setter Property="RenderTransform" Value="scale(1.01)"/>
+    </Style>
+
+    <Style Selector="Button.PrimaryAction">
+        <Setter Property="Background" Value="{StaticResource AccentBlue}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style Selector="Button:pointerover">
+        <Setter Property="RenderTransform" Value="scale(1.02)"/>
+    </Style>
+    <Style Selector="TextBlock">
+        <Setter Property="FontWeight" Value="DemiBold"/>
+        <Setter Property="Foreground" Value="White"/>
+    </Style>
+    <Style Selector="TextBlock.SectionLabel">
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontWeight" Value="DemiBold"/>            
+        <Setter Property="Foreground" Value="{StaticResource SecondaryText}"/>
+    </Style>
+    <Style Selector="TextBox#ResultsTextBox">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="FocusAdorner" Value="{x:Null}"/>
+    </Style>
+
+    <Style Selector="TextBox#ResultsTextBox:pointerover /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+    </Style>
+
+    <Style Selector="TextBox#ResultsTextBox:focus /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="{StaticResource AccentBlue}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+
+    <Style Selector="ListBox">
+        <Setter Property="Background" Value="Transparent"/>
+    </Style>
+
+    <Style Selector="ListBoxItem">
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Background" Value="Transparent"/>
+    </Style>
+
+    <Style Selector="ComboBox">
+        <Setter Property="Background" Value="{StaticResource ControlBackground}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource SubtleBorder}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+
+        <Style.Resources>
+            <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver">#353538</SolidColorBrush>
+            <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver">#454548</SolidColorBrush>
+            <SolidColorBrush x:Key="ComboBoxBackgroundPressed">#252528</SolidColorBrush>
+        </Style.Resources>
+    </Style>
+
+    <Style Selector="ComboBox /template/ PathIcon#DropDownGlyph">
+        <Setter Property="Width" Value="8"/>
+        <Setter Property="Foreground" Value="{StaticResource SecondaryText}"/>
+        <Setter Property="Opacity" Value="0.6"/>
+    </Style>
+
+    <Style Selector="ComboBox:pointerover /template/ PathIcon#DropDownGlyph">
+        <Setter Property="Opacity" Value="1"/>
+    </Style>
+
+    <Style Selector="ComboBox:pointerover /template/ Border#Layer1">
+        <Setter Property="Background" Value="#353538"/> 
+        <Setter Property="BorderBrush" Value="{StaticResource SubtleBorder}"/>
+    </Style>
+
+    <Style Selector="ComboBoxItem">
+        <Setter Property="CornerRadius" Value="6"/>
+    </Style>
+
+    <Style Selector="CheckBox">
+        <Setter Property="Foreground" Value="White"/>
+    </Style>
+
+    <Style Selector="CheckBox /template/ Border#NormalRectangle">
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Width" Value="18"/>
+        <Setter Property="Height" Value="18"/>
+    </Style>
+
+    <Style Selector="CheckBox:pointerover /template/ Border#NormalRectangle">
+        <Setter Property="Background" Value="#3A3A3C"/>
+    </Style>
+</Styles>
