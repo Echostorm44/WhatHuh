@@ -2,7 +2,15 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="WhatHuh.Gui.App"
              RequestedThemeVariant="Dark">
+    <Application.Resources>
+        <FontFamily x:Key="InterFont">avares://WhatHuh.Gui/Assets/Fonts/InterVariable.ttf#Inter</FontFamily>
+    </Application.Resources>
+
     <Application.Styles>
         <FluentTheme />
+        <Style Selector="Window">
+            <Setter Property="FontFamily" Value="{StaticResource InterFont}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>        
+        </Style>
     </Application.Styles>
 </Application>

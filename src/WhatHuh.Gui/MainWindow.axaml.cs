@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Controls.Chrome;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
@@ -262,7 +263,7 @@ public partial class MainWindow : Window
                 }
             }
 
-        using var pipeline = new TranscriptionPipeline(options);
+            using var pipeline = new TranscriptionPipeline(options);
 
             var statusProgress = new Progress<string>(msg =>
             {
@@ -290,10 +291,10 @@ public partial class MainWindow : Window
             var filesToProcess = FilesToConvert.ToList();
             var totalFiles = filesToProcess.Count;
 
-            for (int i = 0; i < filesToProcess.Count; i++)
+            for (int i = 0;i < filesToProcess.Count;i++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                
+
                 var videoPath = filesToProcess[i];
                 var videoDir = Path.GetDirectoryName(videoPath)!;
                 var videoName = Path.GetFileNameWithoutExtension(videoPath);

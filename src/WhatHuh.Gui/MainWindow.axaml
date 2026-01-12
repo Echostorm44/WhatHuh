@@ -4,38 +4,148 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="750"
         x:Class="WhatHuh.Gui.MainWindow"
-        Title="What? Huh? Subtitler"
-        Width="1000" Height="750"
-        MinWidth="800" MinHeight="600"
-        WindowStartupLocation="CenterScreen"
-        Background="#0D0D0D"
-        FontFamily="SF Pro Display, Segoe UI, sans-serif">
-
+        Title="What? Huh? Subtitler"  
+        RenderOptions.TextRenderingMode="SubpixelAntialias"
+        RenderOptions.BitmapInterpolationMode="HighQuality"
+        
+        Width="1000" Height="720" 
+        MinWidth="800" MinHeight="700"
+        BorderBrush="{StaticResource SubtleBorder}" BorderThickness="2"
+        WindowStartupLocation="CenterScreen" CornerRadius="28"       
+        Background="{StaticResource WindowBackground}">
+    <Window.Resources>
+        <SolidColorBrush x:Key="WindowBackground" Color="#1C1C1E"/>
+        <SolidColorBrush x:Key="ControlBackground" Color="#2C2C2E"/>
+        <SolidColorBrush x:Key="SubtleBorder" Color="#3A3A3C"/>
+        <SolidColorBrush x:Key="AccentBlue" Color="#0A84FF"/>
+        <SolidColorBrush x:Key="SecondaryText" Color="#8E8E93"/>
+    </Window.Resources>
     <Window.Styles>
         <Style Selector="Button">
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="Background" Value="{StaticResource ControlBackground}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource SubtleBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Transitions">
                 <Transitions>
-                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15"/>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1"/>
                 </Transitions>
             </Setter>
+        </Style>
+        <Style Selector="Button:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#3A3A3C"/>
+            <Setter Property="RenderTransform" Value="scale(1.01)"/>
+        </Style>
+
+        <Style Selector="Button.PrimaryAction">
+            <Setter Property="Background" Value="{StaticResource AccentBlue}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
         <Style Selector="Button:pointerover">
             <Setter Property="RenderTransform" Value="scale(1.02)"/>
         </Style>
-    </Window.Styles>
+        <Style Selector="TextBlock">
+            <Setter Property="FontWeight" Value="DemiBold"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="TextBlock.SectionLabel">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="DemiBold"/>            
+            <Setter Property="Foreground" Value="{StaticResource SecondaryText}"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>   
+        <Style Selector="TextBox#ResultsTextBox">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="FocusAdorner" Value="{x:Null}"/>
+        </Style>
+
+        <Style Selector="TextBox#ResultsTextBox:pointerover /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="TextBox#ResultsTextBox:focus /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{StaticResource AccentBlue}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style Selector="ListBox">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="4"/>
+        </Style>
+
+        <Style Selector="ListBoxItem">
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Margin" Value="2,1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="ComboBox">
+            <Setter Property="Background" Value="{StaticResource ControlBackground}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource SubtleBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+    
+            <Style.Resources>
+                <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver">#353538</SolidColorBrush>
+                <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver">#454548</SolidColorBrush>
+                <SolidColorBrush x:Key="ComboBoxBackgroundPressed">#252528</SolidColorBrush>
+            </Style.Resources>
+        </Style>
+
+        <Style Selector="ComboBox /template/ PathIcon#DropDownGlyph">
+            <Setter Property="Width" Value="8"/>
+            <Setter Property="Foreground" Value="{StaticResource SecondaryText}"/>
+            <Setter Property="Opacity" Value="0.6"/>
+        </Style>
+
+        <Style Selector="ComboBox:pointerover /template/ PathIcon#DropDownGlyph">
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+
+        <Style Selector="ComboBox:pointerover /template/ Border#Layer1">
+            <Setter Property="Background" Value="#353538"/> 
+            <Setter Property="BorderBrush" Value="{StaticResource SubtleBorder}"/>
+        </Style>
+
+        <Style Selector="ComboBoxItem">
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Margin" Value="2,1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+        </Style>
+
+        <Style Selector="CheckBox">
+            <Setter Property="Padding" Value="10,0,0,0"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <Style Selector="CheckBox /template/ Border#NormalRectangle">
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Width" Value="18"/>
+            <Setter Property="Height" Value="18"/>
+        </Style>
+
+        <Style Selector="CheckBox:pointerover /template/ Border#NormalRectangle">
+            <Setter Property="Background" Value="#3A3A3C"/>
+        </Style>
+   </Window.Styles>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <Grid Margin="32">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="16"/>
+                <RowDefinition Height="46"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="16"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="16"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="16"/>
-                <RowDefinition Height="200"/>
+                <RowDefinition Height="130"/>
                 <RowDefinition Height="24"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
@@ -44,20 +154,9 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Header -->
-            <TextBlock Grid.Row="0" Grid.ColumnSpan="2" 
-                       Text="What? Huh? Subtitler" 
-                       FontSize="32" FontWeight="ExtraLight"
-                       Foreground="#FFFFFF"
-                       Margin="0,0,0,0"/>
-
             <!-- File Selection Area -->
-            <Border Grid.Row="2" Grid.ColumnSpan="2" 
-                    Background="#1A1A1A" 
-                    CornerRadius="16" 
-                    Padding="28"
-                    BoxShadow="0 4 16 0 #11000000">
-                <Grid>
+            
+                <Grid Grid.Row="0" Grid.ColumnSpan="2">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
@@ -72,60 +171,33 @@
                             Content="Browse Files" 
                             Margin="16,0,0,0" 
                             Click="BrowseFiles_Click"
-                            Padding="20,10"
-                            Background="#2C2C2C"
-                            Foreground="#FFFFFF"
-                            CornerRadius="8"
-                            FontSize="14"
-                            FontWeight="Medium"/>
+                            Padding="20,10" />
                     <Button Grid.Column="2" 
                             Content="Browse Folder" 
                             Margin="12,0,0,0" 
                             Click="BrowseFolder_Click"
-                            Padding="20,10"
-                            Background="#2C2C2C"
-                            Foreground="#FFFFFF"
-                            CornerRadius="8"
-                            FontSize="14"
-                            FontWeight="Medium"/>
+                            Padding="20,10"/>
                 </Grid>
-            </Border>
-
+            <Border Grid.Row="1" Grid.ColumnSpan="2" 
+                    VerticalAlignment="Center"
+                    Height="1" Background="#3A3A3C"/>
             <!-- Settings Left Column -->
-            <Border Grid.Row="4" Grid.Column="0" 
-                    Background="#1A1A1A" 
-                    CornerRadius="16" 
-                    Padding="28" 
-                    Margin="0,0,8,0"
-                    BoxShadow="0 4 16 0 #11000000">
+            <Grid Grid.Row="2" Grid.Column="0"
+                    Margin="0,0,8,0">
                 <StackPanel>
-                    <TextBlock Text="Model" 
-                               FontWeight="Medium" 
-                               FontSize="15"
-                               Foreground="#FFFFFF"
-                               Margin="0,0,0,12"/>
+                    <TextBlock Text="MODEL" 
+                               Classes="SectionLabel"/>
                     <ComboBox x:Name="ModelComboBox" 
                               HorizontalAlignment="Stretch"
-                              Background="#2C2C2C"
-                              Foreground="#FFFFFF"
-                              CornerRadius="8"
                               Padding="12,8"
-                              FontSize="14"
                               SelectionChanged="ModelComboBox_SelectionChanged"
                               ToolTip.Tip="Larger models are more accurate but slower. Base is good for clear audio."/>
                     
-                    <TextBlock Text="Language" 
-                               FontWeight="Medium" 
-                               FontSize="15"
-                               Foreground="#FFFFFF"
-                               Margin="0,20,0,12"/>
+                    <TextBlock Text="LANGUAGE" Margin="0,20,0,8"
+                               Classes="SectionLabel"/>
                     <ComboBox x:Name="LanguageComboBox" 
                               SelectedIndex="0"
-                              Background="#2C2C2C"
-                              Foreground="#FFFFFF"
-                              CornerRadius="8"
                               Padding="12,8"
-                              FontSize="14"
                               ToolTip.Tip="Auto detect works for most videos. Select a specific language for better accuracy.">
                         <ComboBoxItem Content="Auto Detect" Tag="auto"/>
                         <ComboBoxItem Content="English" Tag="en"/>
@@ -136,21 +208,14 @@
                         <ComboBoxItem Content="Chinese" Tag="zh"/>
                     </ComboBox>
                 </StackPanel>
-            </Border>
+            </Grid>
 
             <!-- Settings Right Column -->
-            <Border Grid.Row="4" Grid.Column="1"
-                    Background="#1A1A1A" 
-                    CornerRadius="16" 
-                    Padding="28" 
-                    Margin="8,0,0,0"
-                    BoxShadow="0 4 16 0 #11000000">
+            <Grid Grid.Row="2" Grid.Column="1"
+                    Margin="8,0,0,0">
                 <StackPanel>
-                    <TextBlock Text="Options" 
-                               FontWeight="Medium" 
-                               FontSize="15"
-                               Foreground="#FFFFFF"
-                               Margin="0,0,0,12"/>
+                    <TextBlock Text="OPTIONS" 
+                               Classes="SectionLabel"/>
                     <CheckBox x:Name="UseVadCheckBox" 
                               Content="Use Voice Activity Detection" 
                               IsChecked="True" 
@@ -165,19 +230,11 @@
                               FontSize="14"
                               ToolTip.Tip="Uses a local language model to fix grammar and spelling in transcriptions"/>
                     
-                    <TextBlock Text="LLM Model" 
-                               FontWeight="Medium" 
-                               FontSize="15"
-                               Foreground="#FFFFFF"
-                               Margin="0,20,0,12"/>
+                    <TextBlock Text="LLM MODEL" Classes="SectionLabel"/>
                     <ComboBox x:Name="LlmModelComboBox" 
                               SelectedIndex="0" 
                               IsEnabled="False"
-                              Background="#2C2C2C"
-                              Foreground="#FFFFFF"
-                              CornerRadius="8"
                               Padding="12,8"
-                              FontSize="14"
                               ToolTip.Tip="Select which Ollama model to use for transcript refinement">
                         <ComboBoxItem Content="phi3:latest"/>
                         <ComboBoxItem Content="llama3.2:latest"/>
@@ -185,14 +242,10 @@
                         <ComboBoxItem Content="qwen3:latest"/>
                     </ComboBox>
                 </StackPanel>
-            </Border>
+            </Grid>
 
-            <!-- File Queue -->
-            <Border Grid.Row="6" Grid.ColumnSpan="2"
-                    Background="#1A1A1A" 
-                    CornerRadius="16" 
-                    Padding="28"
-                    BoxShadow="0 4 16 0 #11000000">
+            <Grid Grid.Row="4" Grid.ColumnSpan="2" 
+                         Margin="0,20,0,0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -205,68 +258,46 @@
                     </Grid.ColumnDefinitions>
                     
                     <TextBlock Grid.Row="0" Grid.Column="0" 
-                               Text="File Queue" 
-                               FontWeight="SemiBold" 
-                               FontSize="15"
-                               Foreground="#FFFFFF"/>
+                               Text="FILE QUEUE" Classes="SectionLabel"/>
                     <Button Grid.Row="0" Grid.Column="1" 
                             Content="Clear" 
                             Click="ClearQueue_Click" 
-                            Padding="16,6"
-                            Background="#2C2C2C"
-                            Foreground="#FFFFFF"
-                            CornerRadius="6"
-                            FontSize="13"/>
+                            Padding="16,6"/>
                     
                     <ListBox Grid.Row="2" Grid.ColumnSpan="2" 
                              x:Name="FileQueueListBox"
                              MinHeight="100"
-                             MaxHeight="140"
-                             Background="Transparent"
-                             Foreground="#CCCCCC"
-                             CornerRadius="8"
-                             Padding="12"
-                             FontSize="13"
+                             MaxHeight="100"
                              DragDrop.AllowDrop="True"/>
                 </Grid>
-            </Border>
-
+            </Grid>
+                
             <!-- Results Area with Fixed Height -->
-            <Border Grid.Row="8" Grid.ColumnSpan="2" 
-                    Background="#1A1A1A" 
-                    CornerRadius="16" 
-                    Padding="28"
-                    BoxShadow="0 4 16 0 #11000000">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="12"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" 
-                               Text="Results" 
-                               FontWeight="SemiBold" 
-                               FontSize="15"
-                               Foreground="#FFFFFF"/>
-                    <ScrollViewer Grid.Row="2"
-                                  VerticalScrollBarVisibility="Auto"
-                                  HorizontalScrollBarVisibility="Auto">
-                        <TextBox x:Name="ResultsTextBox"
-                                 IsReadOnly="True"
-                                 TextWrapping="Wrap"
-                                 AcceptsReturn="True"
-                                 BorderThickness="0"
-                                 FontFamily="Consolas, Courier New, monospace"
-                                 FontSize="12"
-                                 Foreground="#CCCCCC"
-                                 Background="Transparent"
-                                 MinHeight="80"/>
-                    </ScrollViewer>
-                </Grid>
-            </Border>
+            <Grid Grid.Row="6" Grid.ColumnSpan="2">
+                <StackPanel>
+                    <TextBlock Text="RESULTS" Classes="SectionLabel"/>
+                    <Border Background="#161617" 
+                            CornerRadius="8" 
+                            BorderBrush="{StaticResource SubtleBorder}" 
+                            BorderThickness="1"
+                            MinHeight="110">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <TextBox x:Name="ResultsTextBox"
+                                     Classes="ModernResults"
+                                     IsReadOnly="True"
+                                     TextWrapping="Wrap"
+                                     AcceptsReturn="True"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     FontFamily="Consolas, monospace"/>
+                        </ScrollViewer>
+                    </Border>
+                </StackPanel>
+            </Grid>
+
 
             <!-- Footer with Progress and Buttons -->
-            <Grid Grid.Row="10" Grid.ColumnSpan="2">
+            <Grid Grid.Row="8" Grid.ColumnSpan="2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
@@ -278,7 +309,7 @@
                     <TextBlock x:Name="StatusText" 
                                Text="Ready" 
                                FontSize="13" 
-                               Foreground="#707070"
+                               Foreground="#8E8E93"
                                Margin="0,0,0,8"/>
                     <ProgressBar x:Name="ProgressBar" 
                                  Height="6" 
@@ -294,12 +325,7 @@
                         Content="About" 
                         Margin="20,0,0,0" 
                         Click="About_Click" 
-                        Padding="20,10"
-                        Background="#2C2C2C"
-                        Foreground="#FFFFFF"
-                        CornerRadius="8"
-                        FontSize="14"
-                        FontWeight="Normal"/>
+                        Padding="20,10"/>
                 <Button Grid.Column="2" 
                         x:Name="CancelButton" 
                         Content="Cancel" 
@@ -308,9 +334,6 @@
                         Padding="20,10"
                         Background="#FF3B30"
                         Foreground="#FFFFFF"
-                        CornerRadius="8"
-                        FontSize="14"
-                        FontWeight="Medium"
                         IsVisible="False"/>
                 <Button Grid.Column="3" 
                         x:Name="EngageButton" 
@@ -318,11 +341,7 @@
                         Margin="12,0,0,0" 
                         Click="Engage_Click" 
                         Padding="28,10"
-                        Background="#007AFF"
-                        Foreground="#FFFFFF"
-                        CornerRadius="8"
-                        FontSize="14"
-                        FontWeight="Medium"/>
+                        Classes="PrimaryAction"/>
             </Grid>
         </Grid>
     </ScrollViewer>
