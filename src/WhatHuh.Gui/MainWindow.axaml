@@ -162,11 +162,16 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" 
-                               Text="Drop video files here or browse to select" 
-                               VerticalAlignment="Center" 
-                               FontSize="15" 
-                               Foreground="#707070"/>
+                    <Border Grid.Column="0"
+                            x:Name="DropZoneBorder"
+                            Background="Transparent"
+                            CornerRadius="8"
+                            DragDrop.AllowDrop="True">
+                        <TextBlock Text="Drop video files here or browse to select" 
+                                   VerticalAlignment="Center" 
+                                   FontSize="15" 
+                                   Foreground="#707070"/>
+                    </Border>
                     <Button Grid.Column="1" 
                             Content="Browse Files" 
                             Margin="16,0,0,0" 

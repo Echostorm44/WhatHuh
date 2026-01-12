@@ -108,7 +108,7 @@ Whisper.net automatically selects the best available runtime:
 
 1. **[CUDA](https://developer.nvidia.com/cuda-13-0-0-download-archive)** - NVidia GPUs with CUDA drivers
     Requires [CUDA](https://developer.nvidia.com/cuda-13-0-0-download-archive) 13.1 or later and updated NVIDIA drivers!
-2. **Vulkan** - Windows with Vulkan support
+2. **Vulkan** - Vulkan support
 3. **CoreML** - Apple Silicon Macs
 4. **OpenVINO** - Intel hardware acceleration
 5. **CPU** - Universal fallback

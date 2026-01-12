@@ -48,6 +48,8 @@ public partial class MainWindow : Window
     {
         FileQueueListBox.AddHandler(DragDrop.DropEvent, OnDrop);
         FileQueueListBox.AddHandler(DragDrop.DragOverEvent, OnDragOver);
+        DropZoneBorder.AddHandler(DragDrop.DropEvent, OnDrop);
+        DropZoneBorder.AddHandler(DragDrop.DragOverEvent, OnDragOver);
     }
 
     private void SetupKeyboardShortcuts()
